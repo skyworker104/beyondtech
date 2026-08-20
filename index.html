@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>출판유통통합전산망 · AI 서비스 데모</title>
+<style>
+/* ───────── tokens ───────── */
+:root{
+  --ink:#16181D;        /* 잉크 */
+  --ink-2:#20242C;      /* 잉크 옅은 면 */
+  --ink-3:#2E343F;
+  --paper:#EEF0F3;      /* 작업면 */
+  --card:#FFFFFF;
+  --rule:#D8DCE2;       /* 괘선 */
+  --text:#1B1E24;
+  --text-2:#5C636F;
+  --text-3:#8A919E;
+  --cyan:#0B6E7F;       /* 인쇄 시안 */
+  --cyan-soft:#E4F1F3;
+  --pen:#C0392B;        /* 교정 빨간펜 */
+  --pen-soft:#FAEAE7;
+  --leaf:#2E7A5A;
+  --leaf-soft:#E6F1EC;
+  --gold:#9A7113;
+  --gold-soft:#F7F0DE;
+
+  --serif:"Nanum Myeongjo","Apple SD Gothic Neo","AppleMyungjo",Batang,"바탕",serif;
+  --sans:"Malgun Gothic","맑은 고딕","Apple SD Gothic Neo",system-ui,sans-serif;
+  --mono:ui-monospace,"SFMono-Regular",Consolas,"D2Coding","Malgun Gothic",monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper); color:var(--text);
+  font-family:var(--sans); font-size:14px; line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--cyan); outline-offset:2px}
+
+/* ───────── shell ───────── */
+.shell{display:grid; grid-template-columns:236px 1fr; min-height:100vh}
+.rail{background:var(--ink); color:#fff; padding:22px 0 30px; display:flex; flex-direction:column}
+.brand{padding:0 22px 22px; border-bottom:1px solid #2A2F38}
+.brand .org{font:600 10.5px/1.4 var(--sans); letter-spacing:.14em; color:#7D8593; text-transform:uppercase}
+.brand .name{font-family:var(--serif); font-size:19px; font-weight:700; margin-top:8px; letter-spacing:-.01em}
+.brand .tag{font-size:11px; color:#8A919E; margin-top:4px}
+
+.nav{padding:16px 12px; display:flex; flex-direction:column; gap:2px}
+.nav .grp{font:600 10px/1 var(--sans); letter-spacing:.16em; color:#636A78; padding:14px 10px 8px}
+.nav button{
+  display:flex; align-items:baseline; gap:10px; width:100%; text-align:left;
+  background:none; border:0; color:#C3C9D3; padding:9px 10px; border-radius:5px;
+  font-size:13px; transition:background .14s,color .14s;
+}
+.nav button .no{font-family:var(--mono); font-size:11px; color:#6E7684; flex:none; width:14px}
+.nav button:hover{background:#22262E; color:#fff}
+.nav button[aria-current="true"]{background:var(--cyan); color:#fff}
+.nav button[aria-current="true"] .no{color:#BFE3E8}
+.rail-foot{margin-top:auto; padding:18px 22px 0; border-top:1px solid #2A2F38; font-size:10.5px; color:#6E7684; line-height:1.7}
+
+.main{padding:30px 34px 60px; max-width:1180px}
+.crumb{font:600 10.5px/1 var(--sans); letter-spacing:.16em; color:var(--cyan); text-transform:uppercase}
+h1{font-family:var(--serif); font-size:29px; font-weight:700; letter-spacing:-.02em; margin:11px 0 6px}
+.lede{color:var(--text-2); font-size:13.5px; max-width:74ch; margin:0 0 26px}
+
+/* ───────── primitives ───────── */
+.card{background:var(--card); border:1px solid var(--rule); border-radius:7px}
+.card-h{padding:16px 20px; border-bottom:1px solid var(--rule); display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+.card-h h2{font-size:14.5px; margin:0; font-weight:700; letter-spacing:-.01em}
+.card-h .sub{font-size:11.5px; color:var(--text-3)}
+.card-b{padding:20px}
+.row{display:grid; gap:18px}
+.stamp{
+  font:600 10px/1 var(--sans); letter-spacing:.1em; text-transform:uppercase;
+  padding:4px 7px; border-radius:3px; white-space:nowrap;
+}
+.st-cyan{background:var(--cyan-soft); color:var(--cyan)}
+.st-pen{background:var(--pen-soft); color:var(--pen)}
+.st-leaf{background:var(--leaf-soft); color:var(--leaf)}
+.st-gold{background:var(--gold-soft); color:var(--gold)}
+.mono{font-family:var(--mono)}
+.btn{
+  border:1px solid var(--ink); background:var(--ink); color:#fff;
+  padding:8px 14px; border-radius:5px; font-size:12.5px; font-weight:600;
+}
+.btn:hover{background:var(--ink-3)}
+.btn.ghost{background:none; color:var(--text); border-color:var(--rule)}
+.btn.ghost:hover{background:#F4F5F7}
+.btn.sm{padding:5px 10px; font-size:11.5px}
+
+/* ───────── 브리핑 ───────── */
+.brief-wrap{display:grid; grid-template-columns:1fr 320px; gap:18px; align-items:start}
+.brief{background:var(--card); border:1px solid var(--rule); border-radius:7px; overflow:hidden}
+.brief-meta{
+  display:flex; align-items:center; gap:10px; padding:13px 20px;
+  background:#F7F8FA; border-bottom:1px solid var(--rule); font-size:11.5px; color:var(--text-3);
+}
+.pulse{width:7px;height:7px;border-radius:50%;background:var(--leaf);flex:none}
+.brief-body{padding:22px 24px 8px}
+.line{
+  display:flex; gap:14px; padding:0 0 18px; opacity:0; transform:translateY(4px);
+  animation:rise .42s ease forwards;
+}
+.line .lno{
+  font-family:var(--mono); font-size:11px; color:var(--text-3);
+  border:1px solid var(--rule); border-radius:3px; padding:2px 5px; height:fit-content; flex:none;
+}
+.line p{margin:0; font-size:14.5px; line-height:1.78}
+.line .act{margin-top:9px; display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+.line .why{font-size:11.5px; color:var(--text-3)}
+@keyframes rise{to{opacity:1;transform:none}}
+mark.ev{
+  background:none; color:inherit; font-weight:700;
+  border-bottom:2px solid var(--cyan); cursor:pointer; padding-bottom:1px;
+}
+mark.ev:hover{background:var(--cyan-soft)}
+mark.ev.on{background:var(--cyan); color:#fff; border-color:var(--cyan)}
+mark.pen{border-bottom-color:var(--pen); font-weight:700}
+mark.pen:hover{background:var(--pen-soft)}
+mark.pen.on{background:var(--pen); color:#fff}
+
+/* 근거 패널 */
+.trust{position:sticky; top:24px}
+.trust .card-h{background:#F7F8FA}
+.tkey{font:600 10px/1 var(--sans); letter-spacing:.14em; color:var(--text-3); text-transform:uppercase}
+.tval{font-family:var(--mono); font-size:19px; font-weight:700; margin:5px 0 0}
+.tsrc{border-top:1px dashed var(--rule); margin-top:14px; padding-top:12px; font-size:11.5px; color:var(--text-2)}
+.tsrc dt{font-weight:700; color:var(--text); float:left; width:54px; clear:left}
+.tsrc dd{margin:0 0 7px 60px}
+.empty{padding:34px 20px; text-align:center; color:var(--text-3); font-size:12.5px; line-height:1.8}
+
+/* ───────── 히트맵 ───────── */
+.heat{width:100%; overflow-x:auto}
+.heat table{border-collapse:separate; border-spacing:3px; font-size:11.5px; min-width:640px}
+.heat th{font-weight:600; color:var(--text-3); font-size:10.5px; padding:0 2px 4px; text-align:center}
+.heat th.rw{text-align:left; padding-right:10px; color:var(--text); font-size:12px; white-space:nowrap}
+.heat td{padding:0}
+.cell{
+  width:100%; height:34px; border:0; border-radius:4px; font-family:var(--mono);
+  font-size:10.5px; color:#fff; display:flex; align-items:center; justify-content:center;
+}
+.cell.pick{box-shadow:inset 0 0 0 2px var(--ink)}
+.legend{display:flex; align-items:center; gap:8px; font-size:11px; color:var(--text-3); margin-top:14px}
+.legend i{width:26px;height:9px;border-radius:2px;display:inline-block}
+
+
+/* 신간 미리보기 미니 패널 */
+.pick-grid{display:grid; grid-template-columns:1fr 296px; gap:20px; align-items:start}
+@media (max-width:1080px){ .pick-grid{grid-template-columns:1fr} }
+button.cnt-link{
+  background:none; border:0; padding:0 0 1px; font:inherit; font-family:var(--mono);
+  font-weight:700; color:var(--text); border-bottom:2px solid var(--cyan); cursor:pointer;
+}
+button.cnt-link:hover{background:var(--cyan-soft)}
+.mini{border:1px solid var(--rule); border-radius:6px; background:#FCFCFD; overflow:hidden}
+.mini .mh{display:flex; align-items:center; gap:8px; padding:10px 14px; background:#F7F8FA; border-bottom:1px solid var(--rule); font-size:11px; font-weight:700}
+.mini .mh .stamp{margin-left:auto}
+.mini ul{list-style:none; margin:0; padding:4px 14px}
+.mini li{padding:9px 0; border-top:1px dashed var(--rule)}
+.mini li:first-child{border-top:0}
+.mini .mt{font-family:var(--serif); font-size:13.5px; font-weight:700; letter-spacing:-.01em}
+.mini .mm{font-size:10.5px; color:var(--text-3); margin-top:2px; font-family:var(--mono)}
+.mini .mf{padding:9px 14px; border-top:1px solid var(--rule); font-size:10.5px; color:var(--text-3); background:#F7F8FA}
+.mini .hint2{padding:20px 14px; font-size:11.5px; color:var(--text-3); line-height:1.7; text-align:center}
+
+/* ───────── 검증기 ───────── */
+.probe{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+label.fld{display:block; font-size:11.5px; font-weight:600; color:var(--text-2); margin-bottom:6px}
+input.txt{
+  width:100%; padding:11px 13px; border:1px solid var(--rule); border-radius:5px;
+  font-family:var(--mono); font-size:15px; letter-spacing:.04em; background:#FCFCFD; color:var(--text);
+}
+input.txt:focus{border-color:var(--cyan); background:#fff; outline:none; box-shadow:0 0 0 3px var(--cyan-soft)}
+.hint{font-size:11px; color:var(--text-3); margin-top:6px}
+.verdict{display:flex; gap:11px; align-items:flex-start; padding:13px 15px; border-radius:6px; margin-top:14px; font-size:12.5px; line-height:1.7}
+.v-ok{background:var(--leaf-soft); color:#1E5C42}
+.v-bad{background:var(--pen-soft); color:#8E2A20}
+.v-idle{background:#F4F5F7; color:var(--text-2)}
+.verdict .ic{font-family:var(--mono); font-weight:700; flex:none}
+.decode{list-style:none; margin:14px 0 0; padding:0; font-size:12.5px}
+.decode li{display:grid; grid-template-columns:58px 1fr; gap:12px; padding:9px 0; border-top:1px dashed var(--rule)}
+.decode li:first-child{border-top:0; padding-top:14px}
+.decode .dg{font-family:var(--mono); font-weight:700; color:var(--cyan); font-size:14px}
+.decode b{display:block; font-size:12.5px}
+.decode span{color:var(--text-3); font-size:11.5px}
+.samples{display:flex; gap:6px; flex-wrap:wrap; margin-top:12px}
+
+/* ───────── 태깅 ───────── */
+.tag-grid{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+.picker{display:flex; flex-direction:column; gap:8px}
+.bookbtn{
+  display:block; width:100%; text-align:left; background:#FCFCFD; border:1px solid var(--rule);
+  border-radius:6px; padding:11px 13px; font-size:13px;
+}
+.bookbtn:hover{border-color:var(--cyan); background:#fff}
+.bookbtn[aria-pressed="true"]{border-color:var(--cyan); background:var(--cyan-soft)}
+.bookbtn .bt{display:block; font-family:var(--serif); font-size:15px; font-weight:700; letter-spacing:-.01em}
+.bookbtn .bm{display:block; font-family:var(--mono); font-size:10.5px; color:var(--text-3); margin-top:3px}
+.chips{display:flex; flex-wrap:wrap; gap:7px; margin-top:4px}
+.chip{
+  border:1px solid var(--rule); border-radius:20px; padding:5px 11px; font-size:12px;
+  background:#fff; opacity:0; animation:pop .3s ease forwards;
+}
+.chip .cf{font-family:var(--mono); font-size:10px; color:var(--text-3); margin-left:5px}
+.chip.k-emotion{border-color:#D9C3E4; background:#F8F2FB}
+.chip.k-situation{border-color:#C8DCE8; background:#F0F7FB}
+.chip.k-reader{border-color:#CFE2D4; background:#F1F8F3}
+.chip.k-theme{border-color:#E6D6B8; background:#FBF6EA}
+@keyframes pop{to{opacity:1}}
+.klegend{display:flex; gap:14px; flex-wrap:wrap; font-size:11px; color:var(--text-3); margin-top:14px}
+.klegend b{color:var(--text-2)}
+pre.json{
+  margin:0; background:var(--ink); color:#D6DCE6; border-radius:6px; padding:16px;
+  font-family:var(--mono); font-size:11.5px; line-height:1.7;
+  max-height:330px; overflow:auto;
+}
+pre.json .k{color:#8FD3DE} pre.json .s{color:#E3C88A} pre.json .n{color:#B5D99C}
+
+/* ───────── 공통 표 ───────── */
+table.grid{width:100%; border-collapse:collapse; font-size:12.5px}
+table.grid th{
+  text-align:left; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--text-3); font-weight:600; padding:0 12px 9px; border-bottom:1px solid var(--rule);
+}
+table.grid td{padding:11px 12px; border-bottom:1px solid #EDEFF2; vertical-align:middle}
+table.grid tr:last-child td{border-bottom:0}
+table.grid td.num{font-family:var(--mono); text-align:right}
+.delta-dn{color:var(--pen); font-weight:700}
+.delta-up{color:var(--leaf); font-weight:700}
+.spark{vertical-align:middle}
+
+.note{
+  margin-top:26px; padding:15px 18px; border:1px dashed var(--rule); border-radius:6px;
+  background:#F7F8FA; font-size:11.5px; color:var(--text-2); line-height:1.8;
+}
+.note b{color:var(--text)}
+
+/* ───────── responsive ───────── */
+@media (max-width:1080px){
+  .brief-wrap,.probe,.tag-grid{grid-template-columns:1fr}
+  .trust{position:static}
+}
+@media (max-width:860px){
+  .shell{grid-template-columns:1fr}
+  .rail{padding-bottom:14px}
+  .nav{flex-direction:row; overflow-x:auto; padding:12px}
+  .nav .grp,.rail-foot{display:none}
+  .nav button{white-space:nowrap; width:auto}
+  .main{padding:22px 18px 50px}
+  h1{font-size:24px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms !important; transition-duration:.01ms !important}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- ══════════ 좌측 레일 ══════════ -->
+  <nav class="rail" aria-label="기능 메뉴">
+    <div class="brand">
+      <div class="org">한국출판문화산업진흥원</div>
+      <div class="name">출판유통통합전산망</div>
+      <div class="tag">AI 서비스 프로토타입 · 샘플 데이터</div>
+    </div>
+    <div class="nav" role="tablist">
+      <div class="grp">해석 계층</div>
+      <button role="tab" data-view="brief" aria-current="true"><span class="no">01</span>아침 브리핑</button>
+      <button role="tab" data-view="timing"><span class="no">02</span>출간 타이밍</button>
+      <div class="grp">입력 자동화</div>
+      <button role="tab" data-view="probe"><span class="no">05</span>서지 검증</button>
+      <button role="tab" data-view="tag"><span class="no">06</span>주제 태깅</button>
+    </div>
+    <div class="rail-foot">
+      로그인 계정<br>
+      <span class="mono">가온출판사 · 마케팅팀</span><br><br>
+      번호는 제안서의<br>아이디어 번호입니다.
+    </div>
+  </nav>
+
+  <!-- ══════════ 본문 ══════════ -->
+  <main class="main">
+
+    <!-- ─── 01 아침 브리핑 ─── -->
+    <section data-panel="brief">
+      <div class="crumb">아이디어 ① · 해석 계층</div>
+      <h1>아침 브리핑</h1>
+      <p class="lede">전산망이 이미 보유한 판매·재고·대출·서지 데이터를 읽고, 어제와 달라진 것만 골라 문장으로 씁니다. 굵게 밑줄 친 부분을 누르면 그 문장의 근거가 열립니다.</p>
+
+      <div class="brief-wrap">
+        <div>
+          <div class="brief">
+            <div class="brief-meta">
+              <span class="pulse" aria-hidden="true"></span>
+              <span>2026년 8월 11일 화요일 08:12 생성 · 대상 도서 <b class="mono">37종</b> · 확인된 변화 <b class="mono">4건</b></span>
+              <button class="btn ghost sm" id="regen" style="margin-left:auto">다시 생성</button>
+            </div>
+            <div class="brief-body" id="briefBody"></div>
+          </div>
+
+          <div class="card" style="margin-top:18px">
+            <div class="card-h">
+              <h2>브리핑이 참조한 원본 지표</h2>
+              <span class="sub">유통 채널별 · 최근 7일</span>
+            </div>
+            <div class="card-b" style="padding:14px 8px">
+              <table class="grid">
+                <thead><tr><th>도서</th><th>채널</th><th>추이</th><th style="text-align:right">7일 판매</th><th style="text-align:right">전주 대비</th><th style="text-align:right">권역 재고</th></tr></thead>
+                <tbody id="metricRows"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <aside class="card trust" id="trust" aria-live="polite">
+          <div class="card-h"><h2>근거</h2><span class="sub">Trust card</span></div>
+          <div id="trustBody" class="empty">문장에서 밑줄 친 부분을 누르면<br>그 판단의 계산 근거를 여기 표시합니다.</div>
+        </aside>
+      </div>
+
+      <div class="note">
+        <b>설계 원칙</b> — AI는 결정하지 않고 “확인이 필요한 지점”만 제시합니다. 모든 문장에는 계산 근거와 원본 화면 경로가 붙고, 권고 액션은 실무자가 승인해야 실행됩니다.
+      </div>
+    </section>
+
+    <!-- ─── 02 출간 타이밍 ─── -->
+    <section data-panel="timing" hidden>
+      <div class="crumb">아이디어 ② · 해석 계층</div>
+      <h1>출간 타이밍</h1>
+      <p class="lede">분야별 월간 신간 종수와 판매 실적을 겹쳐 “언제 경쟁이 몰리는지”를 보여줍니다. 진흥원이 이미 보유한 ISBN 신간 데이터만으로 계산합니다. 칸을 누르면 해당 시점의 판단이 아래에 나옵니다.</p>
+
+      <div class="card">
+        <div class="card-h">
+          <h2>분야별 출간 혼잡도</h2>
+          <span class="sub">색이 진할수록 같은 달 경쟁 신간이 많습니다</span>
+          <span class="stamp st-cyan" style="margin-left:auto">샘플 데이터</span>
+        </div>
+        <div class="card-b">
+          <div class="heat" id="heat"></div>
+          <div class="legend">
+            <span>여유</span>
+            <i style="background:#DCE6E9"></i><i style="background:#A9CBD2"></i><i style="background:#6BA6B3"></i><i style="background:#337F90"></i><i style="background:#0B6E7F"></i>
+            <span>혼잡</span>
+            <span style="margin-left:14px">숫자는 해당 월 신간 종수입니다.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px">
+        <div class="card-h"><h2>선택한 시점의 판단</h2><span class="sub" id="pickLabel">칸을 선택하세요</span></div>
+        <div class="card-b" id="pickBody">
+          <p style="margin:0;color:var(--text-3);font-size:12.5px">위 표에서 분야와 월을 선택하면 혼잡도·전년 동월 판매·권장 시점을 계산합니다.</p>
+        </div>
+      </div>
+
+      <div class="note">
+        <b>인터뷰 근거</b> — “어떤 달에는 주요 도서가 몰리고, 어떤 달에는 한산하다. 그걸 한눈에 볼 수 있다면 <b>이 달은 경쟁이 덜하니 이때 가자</b> 같은 전략적 출간 계획을 세우는 데 큰 도움이 될 것” (푸른숲 문창운 마케팅본부장)
+      </div>
+    </section>
+
+    <!-- ─── 05 서지 검증 ─── -->
+    <section data-panel="probe" hidden>
+      <div class="crumb">아이디어 ⑤ · 입력 자동화</div>
+      <h1>서지 검증</h1>
+      <p class="lede">신간을 등록하는 순간 ISBN 체크디지트와 부가기호를 계산해 검증합니다. 이 화면의 계산은 실제 규칙으로 동작합니다 — 숫자를 바꿔 보세요.</p>
+
+      <div class="probe">
+        <div class="card">
+          <div class="card-h"><h2>ISBN 13자리</h2><span class="sub">체크디지트 실시간 계산</span></div>
+          <div class="card-b">
+            <label class="fld" for="isbn">ISBN</label>
+            <input class="txt" id="isbn" value="9791168340572" maxlength="17" inputmode="numeric" autocomplete="off" spellcheck="false">
+            <div class="hint">하이픈은 넣어도 됩니다. 13자리를 모두 입력하면 즉시 판정합니다.</div>
+            <div class="verdict v-idle" id="isbnVerdict"><span class="ic">···</span><span>숫자를 입력하면 판정합니다.</span></div>
+            <ul class="decode" id="isbnDecode"></ul>
+            <div class="samples">
+              <button class="btn ghost sm" data-isbn="9791168340572">정상 예시</button>
+              <button class="btn ghost sm" data-isbn="9791168340573">마지막 자리 오류</button>
+              <button class="btn ghost sm" data-isbn="9691168340575">접두번호 오류</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h"><h2>부가기호 5자리</h2><span class="sub">독자대상 · 발행형태 · 내용분류</span></div>
+          <div class="card-b">
+            <label class="fld" for="addl">부가기호</label>
+            <input class="txt" id="addl" value="77400" maxlength="5" inputmode="numeric" autocomplete="off" spellcheck="false">
+            <div class="hint">이연호 회장이 설명한 조합 규칙을 그대로 구현했습니다.</div>
+            <ul class="decode" id="addlDecode"></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px">
+        <div class="card-h"><h2>등록 직전 점검 결과</h2><span class="sub">배본 전 차단해야 하는 항목</span></div>
+        <div class="card-b" style="padding:14px 8px">
+          <table class="grid">
+            <thead><tr><th>점검 항목</th><th>결과</th><th>상세</th></tr></thead>
+            <tbody id="checkRows"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="note">
+        <b>인터뷰 근거</b> — “ISBN 정보를 잘못 전달했다. 다행히 책이 물류센터에서 배본되기 바로 직전에 발견했다” (썬더키즈 손기주 대표) · <b>설계 원칙</b> — 시스템이 등록을 막지 않고, 사람이 확인할 지점만 표시합니다.
+      </div>
+    </section>
+
+    <!-- ─── 06 주제 태깅 ─── -->
+    <section data-panel="tag" hidden>
+      <div class="crumb">아이디어 ⑥ · 입력 자동화</div>
+      <h1>주제 태깅</h1>
+      <p class="lede">부가기호 5자리로는 470여 조합밖에 만들 수 없습니다. 본문·목차·서평·대출 기록을 근거로 상황과 정서까지 담은 태그를 만들고, 그 결과를 서점 POS가 가져갈 수 있는 형태로 내보냅니다.</p>
+
+      <div class="tag-grid">
+        <div class="card">
+          <div class="card-h"><h2>도서 선택</h2><span class="sub">가온출판사 목록 일부</span></div>
+          <div class="card-b">
+            <div class="picker" id="picker"></div>
+            <button class="btn" id="genTags" style="margin-top:14px;width:100%">태그 만들기</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h"><h2>생성된 태그</h2><span class="sub" id="tagMeta">도서를 선택하세요</span></div>
+          <div class="card-b">
+            <div class="chips" id="chips"><p style="margin:0;color:var(--text-3);font-size:12.5px">왼쪽에서 도서를 고르고 “태그 만들기”를 누르세요.</p></div>
+            <div class="klegend">
+              <span><b>정서</b> 감정·분위기</span><span><b>상황</b> 읽는 맥락</span>
+              <span><b>독자</b> 대상·학년</span><span><b>주제</b> 내용 분류</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px">
+        <div class="card-h">
+          <h2>서점 POS로 내보내는 응답</h2>
+          <span class="sub mono">GET /open-api/v1/titles/{isbn}/tags</span>
+          <span class="stamp st-gold" style="margin-left:auto">아이디어 ⑩ 오픈 API</span>
+        </div>
+        <div class="card-b"><pre class="json" id="jsonOut">태그를 만들면 응답 예시가 표시됩니다.</pre></div>
+      </div>
+
+      <div class="note">
+        <b>인터뷰 근거</b> — “중소형 서점에서 직접 하기에는 시간과 노력이 많이 든다. 출판사나 관계자들이 도서 정보 표준화와 주제분류에 신경 써 주셨으면” (북이즈 이한힘 대표, 큐레이션 챗봇 정확도 현재 80%) · 전산망은 챗봇을 직접 만들지 않고 <b>태그를 공급</b>합니다.
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+"use strict";
+
+/* ═══════════ 뷰 전환 ═══════════ */
+const tabs = document.querySelectorAll('.nav button');
+const panels = document.querySelectorAll('[data-panel]');
+tabs.forEach(t => t.addEventListener('click', () => {
+  tabs.forEach(x => x.setAttribute('aria-current', String(x === t)));
+  panels.forEach(p => { p.hidden = (p.dataset.panel !== t.dataset.view); });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (t.dataset.view === 'brief') renderBrief();
+}));
+
+/* ═══════════ 01 아침 브리핑 ═══════════ */
+const EVIDENCE = {
+  e1: {
+    title: '알라딘 3일 연속 하락',
+    value: '-38%',
+    caption: '8/8~8/10 일평균 판매, 직전 3일 대비',
+    rows: [['계산식','(8/8~10 합계 21부 ÷ 3) ÷ (8/5~7 합계 34부 ÷ 3) − 1'],['원본','판매통계 › 유통 채널별 판매 현황'],['갱신','매일 06:00 수집']]
+  },
+  e2: {
+    title: '부산·대구권 재고 소진',
+    value: '0부',
+    caption: '해당 권역 지역서점 POS 합산 재고',
+    rows: [['집계 대상','부산 11곳 · 대구 8곳 (POS 연계 서점)'],['원본','판매통계/재고현황 › 재고정보 현황'],['한계','미연계 서점은 집계되지 않음']]
+  },
+  e3: {
+    title: '교보문고 주제분류 순위 상승',
+    value: '14위 → 6위',
+    caption: '사회과학 분야, 전일 대비',
+    rows: [['동반 지표','유입 검색어 “번아웃” 4일 연속 증가'],['원본','판매통계 › 주제분류별 판매량 순위'],['갱신','매일 07:30 수집']]
+  },
+  e4: {
+    title: '도서관 대출 키워드 상승',
+    value: '3주 연속 ↑',
+    caption: '“기후” 관련 주제 대출 건수',
+    rows: [['비교','전국 공공도서관 대출통계 주간 집계'],['보유 여부','가온출판사 해당 주제 신간 없음'],['원본','도서관 대출통계 현황']]
+  },
+  e5: {
+    title: '부가기호 정합성 경고',
+    value: '불일치 1건',
+    caption: '독자대상기호와 내용분류가 어긋남',
+    rows: [['입력값','부가기호 47810'],['판정','독자대상 4(청소년) + 내용분류 810(한국문학) 조합은 확인 필요'],['원본','도서정보 관리 › 신간 등록']]
+  }
+};
+
+const BRIEF_LINES = [
+  {
+    html: '《바다를 걷는 아이》 알라딘 판매가 <mark class="ev" data-ev="e1">3일 연속 하락</mark>했습니다. 같은 기간 <mark class="ev" data-ev="e2">부산·대구권 지역서점 재고는 소진</mark> 상태입니다.',
+    action: { label: '해당 권역 12부 추가 배본 검토', tone: 'st-pen' },
+    why: '판매 하락이 수요 감소가 아니라 공급 공백일 가능성이 있습니다.'
+  },
+  {
+    html: '《느린 회복》 개정판이 교보문고 사회과학 순위에서 <mark class="ev" data-ev="e3">14위에서 6위로 올랐습니다</mark>. 유입 검색어는 “번아웃”입니다.',
+    action: { label: '“번아웃” 키워드로 홍보문 초안 만들기', tone: 'st-cyan' },
+    why: '순위가 살아 있는 3~5일 안에 노출을 붙이는 편이 효율적입니다.'
+  },
+  {
+    html: '도서관 대출에서 “기후” 주제가 <mark class="ev" data-ev="e4">3주 연속 상승</mark>했지만, 해당 주제 신간이 목록에 없습니다.',
+    action: { label: '기획 후보로 등록', tone: 'st-leaf' },
+    why: '대출 수요가 앞서고 출간이 뒤따르는 구간입니다.'
+  },
+  {
+    html: '《작은 정원》 서지정보에서 <mark class="ev pen" data-ev="e5">부가기호 불일치</mark>를 확인했습니다. 배본 전에 확인이 필요합니다.',
+    action: { label: '서지 검증에서 열기', tone: 'st-pen', go: 'probe' },
+    why: '배본 이후에는 스티커 작업과 반품 비용이 발생합니다.'
+  }
+];
+
+const METRICS = [
+  { t:'바다를 걷는 아이', ch:'알라딘', spark:[9,11,12,10,8,7,6], sales:21, delta:-38, stock:'0부', warn:true },
+  { t:'바다를 걷는 아이', ch:'교보문고', spark:[7,7,8,8,9,9,10], sales:34, delta:+6, stock:'52부', warn:false },
+  { t:'느린 회복 (개정판)', ch:'교보문고', spark:[4,5,6,8,11,15,19], sales:68, delta:+41, stock:'118부', warn:false },
+  { t:'느린 회복 (개정판)', ch:'예스24', spark:[3,4,4,5,7,9,11], sales:43, delta:+27, stock:'76부', warn:false },
+  { t:'작은 정원', ch:'지역서점 19곳', spark:[2,2,3,2,2,1,2], sales:14, delta:-4, stock:'23부', warn:false }
+];
+
+function sparkSVG(vals, up) {
+  const w = 66, h = 20, max = Math.max(...vals), min = Math.min(...vals);
+  const span = (max - min) || 1;
+  const pts = vals.map((v, i) => [
+    (i / (vals.length - 1)) * (w - 2) + 1,
+    h - 2 - ((v - min) / span) * (h - 5)
+  ]);
+  const d = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+  const c = up ? '#2E7A5A' : '#C0392B';
+  const last = pts[pts.length - 1];
+  return '<svg class="spark" width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" aria-hidden="true">'
+    + '<path d="' + d + '" fill="none" stroke="' + c + '" stroke-width="1.6" stroke-linecap="round"/>'
+    + '<circle cx="' + last[0].toFixed(1) + '" cy="' + last[1].toFixed(1) + '" r="2.2" fill="' + c + '"/></svg>';
+}
+
+function renderBrief() {
+  const body = document.getElementById('briefBody');
+  body.innerHTML = '';
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  BRIEF_LINES.forEach((L, i) => {
+    const div = document.createElement('div');
+    div.className = 'line';
+    div.style.animationDelay = (reduce ? 0 : i * 0.26) + 's';
+    div.innerHTML = '<span class="lno">' + String(i + 1).padStart(2, '0') + '</span>'
+      + '<div><p>' + L.html + '</p><div class="act">'
+      + '<span class="stamp ' + L.action.tone + '">권고</span>'
+      + '<button class="btn ghost sm"' + (L.action.go ? ' data-go="' + L.action.go + '"' : '') + '>' + L.action.label + '</button>'
+      + '</div><div class="why">' + L.why + '</div></div>';
+    body.appendChild(div);
+  });
+
+  body.querySelectorAll('mark.ev').forEach(m => m.addEventListener('click', () => {
+    body.querySelectorAll('mark.ev').forEach(x => x.classList.toggle('on', x === m));
+    showEvidence(m.dataset.ev);
+  }));
+  body.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => {
+    document.querySelector('.nav button[data-view="' + b.dataset.go + '"]').click();
+  }));
+
+  document.getElementById('metricRows').innerHTML = METRICS.map(m =>
+    '<tr><td>' + m.t + (m.warn ? ' <span class="stamp st-pen">확인</span>' : '') + '</td>'
+    + '<td style="color:var(--text-2)">' + m.ch + '</td>'
+    + '<td>' + sparkSVG(m.spark, m.delta >= 0) + '</td>'
+    + '<td class="num">' + m.sales + '부</td>'
+    + '<td class="num ' + (m.delta >= 0 ? 'delta-up' : 'delta-dn') + '">' + (m.delta >= 0 ? '+' : '') + m.delta + '%</td>'
+    + '<td class="num">' + m.stock + '</td></tr>'
+  ).join('');
+}
+
+function showEvidence(key) {
+  const e = EVIDENCE[key];
+  const box = document.getElementById('trustBody');
+  box.className = 'card-b';
+  box.innerHTML = '<div class="tkey">' + e.title + '</div>'
+    + '<p class="tval">' + e.value + '</p>'
+    + '<div style="font-size:11.5px;color:var(--text-3);margin-top:4px">' + e.caption + '</div>'
+    + '<dl class="tsrc">' + e.rows.map(r => '<dt>' + r[0] + '</dt><dd>' + r[1] + '</dd>').join('') + '</dl>'
+    + '<button class="btn ghost sm" style="margin-top:14px;width:100%" disabled>원본 화면 열기 (데모에서는 비활성)</button>';
+}
+
+document.getElementById('regen').addEventListener('click', renderBrief);
+
+/* ═══════════ 02 출간 타이밍 ═══════════ */
+const FIELDS = ['인문·교양', '경제·경영', '자기계발', '아동', '청소년', '문학'];
+const MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+// 분야별 월간 신간 종수 (샘플)
+const TITLES = [
+  [412,398,468,441,402,381,352,338,486,512,498,392],
+  [388,362,441,418,377,352,331,318,462,498,521,406],
+  [301,288,352,338,302,281,262,251,368,412,438,392],
+  [268,242,318,412,438,301,278,262,332,352,368,288],
+  [188,171,222,241,208,181,168,161,248,268,281,202],
+  [352,331,398,381,352,328,302,291,418,441,462,368]
+];
+// 전년 동월 판매지수 (100 = 연평균)
+const DEMAND = [
+  [ 94, 91,102,104, 99, 92, 88, 91,108,116,121,103],
+  [ 98, 92,106,103, 97, 91, 86, 88,111,118,124,101],
+  [118,108, 99, 96, 92, 89, 91, 94,101,106,112, 98],
+  [ 88, 84,101,131,118, 96, 108,112, 99,102,106, 92],
+  [ 92, 88,112,118,101, 88, 96,102,116,108,104, 94],
+  [ 96, 92,101, 99, 97, 94, 102,108,112,116,118,101]
+];
+
+function heatColor(v, min, max) {
+  const t = (v - min) / ((max - min) || 1);
+  const stops = ['#DCE6E9','#A9CBD2','#6BA6B3','#337F90','#0B6E7F'];
+  return stops[Math.min(4, Math.floor(t * 5))];
+}
+
+function buildHeat() {
+  const flat = TITLES.flat();
+  const min = Math.min(...flat), max = Math.max(...flat);
+  let h = '<table><thead><tr><th class="rw">분야</th>' + MONTHS.map(m => '<th>' + m + '</th>').join('') + '</tr></thead><tbody>';
+  TITLES.forEach((row, r) => {
+    h += '<tr><th class="rw">' + FIELDS[r] + '</th>';
+    row.forEach((v, c) => {
+      const bg = heatColor(v, min, max);
+      const dark = ['#337F90','#0B6E7F'].includes(bg);
+      h += '<td><button class="cell" data-r="' + r + '" data-c="' + c + '" '
+        + 'style="background:' + bg + ';color:' + (dark ? '#fff' : '#1B1E24') + '" '
+        + 'aria-label="' + FIELDS[r] + ' ' + MONTHS[c] + ' 신간 ' + v + '종">' + v + '</button></td>';
+    });
+    h += '</tr>';
+  });
+  document.getElementById('heat').innerHTML = h + '</tbody></table>';
+
+  document.querySelectorAll('#heat .cell').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('#heat .cell').forEach(x => x.classList.remove('pick'));
+    b.classList.add('pick');
+    pickCell(+b.dataset.r, +b.dataset.c);
+  }));
+}
+
+function pickCell(r, c) {
+  const row = TITLES[r], titles = row[c], demand = DEMAND[r][c];
+  const avg = row.reduce((a, b) => a + b, 0) / 12;
+  const congestion = titles / avg;
+  const score = demand / congestion;
+  const best = row.map((v, i) => ({ i, s: DEMAND[r][i] / (v / avg) }))
+                  .sort((a, b) => b.s - a.s)[0];
+
+  let tone, verdict;
+  if (score >= 108) { tone = 'st-leaf'; verdict = '출간에 유리한 시점입니다.'; }
+  else if (score >= 92) { tone = 'st-gold'; verdict = '평균적인 시점입니다.'; }
+  else { tone = 'st-pen'; verdict = '경쟁이 몰리는 시점입니다.'; }
+
+  document.getElementById('pickLabel').textContent = FIELDS[r] + ' · ' + MONTHS[c];
+  document.getElementById('pickBody').innerHTML =
+    '<div class="pick-grid"><div>'
+    + '<div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap">'
+    + '<span class="stamp ' + tone + '">' + verdict + '</span>'
+    + '<span style="font-size:12px;color:var(--text-3)">기회 점수 <b class="mono" style="color:var(--text)">' + score.toFixed(0) + '</b> · 100이 평균</span></div>'
+    + '<table class="grid"><tbody>'
+    + '<tr><td style="width:190px">해당 월 신간 종수</td><td style="text-align:left"><button class="cnt-link" id="cntLink">' + titles + '종</button></td>'
+    + '<td style="color:var(--text-3)">연평균 ' + avg.toFixed(0) + '종의 ' + (congestion * 100).toFixed(0) + '% · 숫자를 누르면 신간 미리보기</td></tr>'
+    + '<tr><td>전년 동월 판매지수</td><td class="num" style="text-align:left">' + demand + '</td>'
+    + '<td style="color:var(--text-3)">100이 연평균 수요</td></tr>'
+    + '<tr><td>이 분야 최적 시점</td><td class="num" style="text-align:left">' + MONTHS[best.i] + '</td>'
+    + '<td style="color:var(--text-3)">기회 점수 ' + best.s.toFixed(0) + ' · 신간 ' + row[best.i] + '종</td></tr>'
+    + '</tbody></table>'
+    + '<div class="why" style="margin-top:14px;font-size:11.5px;color:var(--text-3)">기회 점수 = 전년 동월 판매지수 ÷ (해당 월 신간 종수 ÷ 연평균 종수). 판단은 참고용이며 최종 결정은 실무자가 합니다.</div>'
+    + '</div>'
+    + '<aside class="mini" id="miniList"><div class="hint2">왼쪽 표에서 <b>신간 종수 숫자</b>를 누르면<br>이 달의 신간 5종을 여기에 미리봅니다.</div></aside>'
+    + '</div>';
+  document.getElementById('cntLink').addEventListener('click', () => renderMini(r, c));
+}
+
+/* ── 신간 미리보기(샘플 5종, 우측 패널) ── */
+const BOOK_TITLES=[
+  ['생각의 지도','질문하는 역사','철학자의 아침','기억의 형태','사소한 것들의 세계사','고전이 답하다','도시의 마음','언어의 온도계','시간의 문법','읽는 인간','경계의 인문학','밤의 박물관'],
+  ['돈의 방향','작은 회사의 전략','시장을 읽는 눈','협상의 밀도','일의 구조','브랜드의 문장','투자의 감각','조직의 온도','숫자로 보는 하루','성장의 역설','고객의 문법','리더의 질문'],
+  ['아침 10분의 힘','루틴의 재발견','흔들리지 않는 마음','기록하는 삶','작게 시작하기','몰입의 기술','말버릇의 심리학','회복탄력 수업','시간을 쓰는 법','나를 경영하다','습관의 각도','다시 배우는 용기'],
+  ['구름을 파는 가게','고래가 된 자전거','씨앗의 약속','달빛 도서관','꼬마 발명가 진진','숲속 우체부','바람의 색깔','할머니의 주머니','로봇 친구 삐로','별을 세는 밤','수박 수영장 옆집','아주 작은 공룡'],
+  ['열일곱의 지도','우리들의 방과후','푸른 문 너머','시험 없는 나라','첫 문장의 용기','비 오는 날의 물리학','교실 밖 우주','나의 작은 혁명','유월의 달리기','안녕, 익명','소리 없는 응원','열여덟, 바다'],
+  ['모래의 계절','유리 정원','밤의 문장들','흐르는 집','여름의 끝에서','고요한 파도','남겨진 이름','종이 새','먼 곳의 안부','회색 노트','물의 계보','유월장마'] ];
+const PUBS=['가온출판사','물결서재','푸른숲','열린틈','다정한책','새벽나무','한걸음','책과바람','시월의숲','작은우주','반듯한서재','종이돛'];
+function renderMini(r,c){
+  let seed=r*97+c*31+7;
+  const rnd=()=>{ seed=(seed*1103515245+12345)%2147483648; return seed/2147483648; };
+  const pool=BOOK_TITLES[r].slice();
+  for(let i=pool.length-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); [pool[i],pool[j]]=[pool[j],pool[i]]; }
+  const items=[];
+  for(let i=0;i<5;i++){
+    const pub=PUBS[Math.floor(rnd()*PUBS.length)];
+    const day=1+Math.floor(rnd()*27);
+    items.push('<li><div class="mt">'+pool[i]+'</div><div class="mm">'+pub+' · '+MONTHS[c]+' '+day+'일 출간</div></li>');
+  }
+  document.getElementById('miniList').innerHTML=
+    '<div class="mh">'+FIELDS[r]+' · '+MONTHS[c]+' 신간 미리보기<span class="stamp st-cyan">샘플</span></div>'
+    +'<ul>'+items.join('')+'</ul>'
+    +'<div class="mf">외 '+(TITLES[r][c]-5).toLocaleString()+'종 — 전체 목록은 전산망 신간 데이터와 연결됩니다</div>';
+}
+
+/* ═══════════ 05 서지 검증 ═══════════ */
+function isbn13Check(digits) {           // digits: 12자리 문자열 → 체크디지트
+  let sum = 0;
+  for (let i = 0; i < 12; i++) sum += (+digits[i]) * (i % 2 ? 3 : 1);
+  return (10 - (sum % 10)) % 10;
+}
+
+function decodeISBN(raw) {
+  const ul = document.getElementById('isbnDecode');
+  if (raw.length !== 13) { ul.innerHTML = ''; return; }
+  const country = raw.slice(0, 3) === '979' ? ['11', '대한민국 (979 체계)'] : ['89', '대한민국 (978 체계)'];
+  const actual = raw.slice(3, 5);
+  const items = [
+    [raw.slice(0, 3), '접두번호', '도서를 뜻하는 상품 코드'],
+    [actual, '국별번호', actual === country[0] ? country[1] : '등록 범위표에서 확인이 필요합니다'],
+    [raw.slice(5, 12), '발행자번호 + 서명식별번호', '두 번호의 경계는 발행자 등록 범위에 따라 달라집니다'],
+    [raw.slice(12), '체크디지트', '앞 12자리로 계산되는 검증 숫자']
+  ];
+  ul.innerHTML = items.map(i =>
+    '<li><span class="dg" style="font-size:12.5px">' + i[0] + '</span><div><b>' + i[1] + '</b><span>' + i[2] + '</span></div></li>'
+  ).join('');
+}
+
+function verifyISBN() {
+  const raw = document.getElementById('isbn').value.replace(/[^0-9]/g, '');
+  decodeISBN(raw);
+  const box = document.getElementById('isbnVerdict');
+  const set = (cls, ic, msg) => { box.className = 'verdict ' + cls; box.innerHTML = '<span class="ic">' + ic + '</span><span>' + msg + '</span>'; };
+
+  if (raw.length === 0) { set('v-idle', '···', '숫자를 입력하면 판정합니다.'); return null; }
+  if (raw.length < 13) { set('v-idle', raw.length + '/13', '13자리 중 ' + raw.length + '자리를 입력했습니다.'); return null; }
+  if (raw.length > 13) { set('v-bad', '!', '13자리를 넘었습니다. ' + raw.length + '자리가 입력되어 있습니다.'); return null; }
+
+  const prefix = raw.slice(0, 3);
+  const expect = isbn13Check(raw.slice(0, 12));
+  const actual = +raw[12];
+
+  if (prefix !== '978' && prefix !== '979') {
+    set('v-bad', '!', '앞 3자리가 <b class="mono">' + prefix + '</b>입니다. 도서 ISBN은 978 또는 979로 시작해야 합니다.');
+    return { ok: false, why: '접두 3자리 오류' };
+  }
+  if (expect !== actual) {
+    set('v-bad', '!', '마지막 자리가 <b class="mono">' + actual + '</b>인데 계산값은 <b class="mono">' + expect + '</b>입니다. 바코드 제작 전에 확인하세요.');
+    return { ok: false, why: '체크디지트 불일치 (계산값 ' + expect + ')' };
+  }
+  const kr = raw.slice(3, 5) === '11' ? ' · 국별번호 11(대한민국)' : '';
+  set('v-ok', '✓', '체크디지트가 일치합니다. 접두 <b class="mono">' + prefix + '</b>' + kr + '.');
+  return { ok: true, why: '체크디지트 일치' };
+}
+
+const READER = { '0':['교양','일반 성인 교양서'],'1':['실용','실용·취미·생활'],'2':['여성','여성 대상'],'3':['(예비)','미지정 구간'],'4':['청소년','중·고등 일반'],'5':['중고등 학습참고서','학습참고 5'],'6':['초등 학습참고서','학습참고 6'],'7':['아동','유아·어린이'],'8':['(예비)','미지정 구간'],'9':['전문','전문·학술'] };
+const FORM = { '0':['문고본',''],'1':['사전',''],'2':['신서판',''],'3':['단행본',''],'4':['전집·총서',''],'5':['전자출판물',''],'6':['도감',''],'7':['만화',''],'8':['혼합자료',''],'9':['(예비)','미지정 구간'] };
+const KDC = { '0':'총류','1':'철학','2':'종교','3':'사회과학','4':'자연과학','5':'기술과학','6':'예술','7':'언어','8':'문학','9':'역사' };
+
+function decodeAddl() {
+  const raw = document.getElementById('addl').value.replace(/[^0-9]/g, '');
+  const ul = document.getElementById('addlDecode');
+  if (raw.length < 5) {
+    ul.innerHTML = '<li><span class="dg">' + raw.length + '/5</span><div><b>5자리를 입력하세요</b><span>독자대상 1자리 + 발행형태 1자리 + 내용분류 3자리</span></div></li>';
+    return null;
+  }
+  const r = READER[raw[0]], f = FORM[raw[1]], k = KDC[raw[2]];
+  const items = [
+    ['<span class="dg">' + raw[0] + '</span>', '독자대상 · ' + r[0], r[1]],
+    ['<span class="dg">' + raw[1] + '</span>', '발행형태 · ' + f[0], f[1] || '발행 형태 구분'],
+    ['<span class="dg">' + raw.slice(2) + '</span>', '내용분류 · ' + k, 'KDC ' + raw[2] + '00번대']
+  ];
+  ul.innerHTML = items.map(i => '<li>' + i[0] + '<div><b>' + i[1] + '</b><span>' + i[2] + '</span></div></li>').join('');
+
+  // 조합 정합성: 학습참고서 기호에 문학/예술 분류가 붙는 등 어긋난 조합을 표시
+  let conflict = null;
+  if ((raw[0] === '5' || raw[0] === '6') && !['3','4','5','7'].includes(raw[2]))
+    conflict = '학습참고서 기호에 ' + k + ' 분류가 붙었습니다.';
+  if (raw[0] === '7' && raw[1] === '7' && raw[2] === '8')
+    conflict = '아동 만화에 문학 분류가 붙었습니다. 예술(6)이 맞는지 확인하세요.';
+  if (raw[0] === '3' || raw[0] === '8' || raw[1] === '9')
+    conflict = '예비 구간 기호가 포함되어 있습니다.';
+  return { code: raw, label: r[0] + ' · ' + f[0] + ' · ' + k, conflict };
+}
+
+function runChecks() {
+  const isbn = verifyISBN();
+  const addl = decodeAddl();
+  const rows = [];
+  const push = (name, ok, detail) => rows.push(
+    '<tr><td>' + name + '</td><td><span class="stamp ' + (ok === true ? 'st-leaf' : ok === false ? 'st-pen' : 'st-gold') + '">'
+    + (ok === true ? '통과' : ok === false ? '확인 필요' : '대기') + '</span></td>'
+    + '<td style="color:var(--text-2)">' + detail + '</td></tr>');
+
+  push('ISBN 체크디지트', isbn ? isbn.ok : null, isbn ? isbn.why : '13자리 입력 대기');
+  push('부가기호 해석', addl ? true : null, addl ? addl.label : '5자리 입력 대기');
+  push('부가기호 조합 정합성', addl ? !addl.conflict : null, addl ? (addl.conflict || '어긋난 조합이 없습니다') : '5자리 입력 대기');
+  push('납본 데이터 일치', null, '국립중앙도서관 연계 — 데모에서는 조회하지 않습니다');
+  push('바코드 이미지 대조', null, '표지 파일 업로드 시 판독 후 대조');
+  document.getElementById('checkRows').innerHTML = rows.join('');
+}
+
+document.getElementById('isbn').addEventListener('input', runChecks);
+document.getElementById('addl').addEventListener('input', runChecks);
+document.querySelectorAll('[data-isbn]').forEach(b => b.addEventListener('click', () => {
+  document.getElementById('isbn').value = b.dataset.isbn;
+  runChecks();
+}));
+
+/* ═══════════ 06 주제 태깅 ═══════════ */
+const BOOKS = [
+  {
+    t: '바다를 걷는 아이', isbn: '9791168340572', addl: '73400',
+    meta: '아동 · 단행본 · 자연과학',
+    tags: [
+      ['상황','전학·새 학교 적응',0.91],['정서','외로움에서 용기로',0.88],
+      ['독자','초등 3~4학년',0.94],['주제','해양 생태',0.86],
+      ['상황','여름방학 읽기',0.79],['주제','기후 변화',0.74],
+      ['정서','조용한 위로',0.71],['독자','부모와 함께 읽기',0.68]
+    ]
+  },
+  {
+    t: '느린 회복 (개정판)', isbn: '9791168340589', addl: '03300',
+    meta: '교양 · 단행본 · 사회과학',
+    tags: [
+      ['정서','번아웃',0.95],['상황','퇴근 후 혼자 읽기',0.89],
+      ['주제','노동과 휴식',0.87],['독자','30~40대 직장인',0.85],
+      ['상황','이직 준비 중',0.76],['정서','다시 시작하는 마음',0.73],
+      ['주제','조직 문화',0.69]
+    ]
+  },
+  {
+    t: '작은 정원', isbn: '9791168340596', addl: '47810',
+    meta: '청소년 · 단행본 · 문학',
+    tags: [
+      ['정서','상실과 애도',0.92],['독자','중학생',0.90],
+      ['상황','비 오는 날',0.81],['주제','가족',0.88],
+      ['상황','학교 추천도서',0.84],['정서','천천히 회복',0.75],
+      ['주제','정원 가꾸기',0.66]
+    ]
+  }
+];
+const KIND = { '정서':'k-emotion', '상황':'k-situation', '독자':'k-reader', '주제':'k-theme' };
+let picked = 0;
+
+function buildPicker() {
+  document.getElementById('picker').innerHTML = BOOKS.map((b, i) =>
+    '<button class="bookbtn" data-i="' + i + '" aria-pressed="' + (i === picked) + '">'
+    + '<span class="bt">' + b.t + '</span>'
+    + '<span class="bm">ISBN ' + b.isbn + ' · 부가기호 ' + b.addl + '</span>'
+    + '<span class="bm" style="color:var(--text-2)">' + b.meta + '</span></button>'
+  ).join('');
+  document.querySelectorAll('.bookbtn').forEach(b => b.addEventListener('click', () => {
+    picked = +b.dataset.i;
+    document.querySelectorAll('.bookbtn').forEach(x => x.setAttribute('aria-pressed', String(+x.dataset.i === picked)));
+  }));
+}
+
+document.getElementById('genTags').addEventListener('click', () => {
+  const b = BOOKS[picked];
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.getElementById('tagMeta').textContent = b.t + ' · 태그 ' + b.tags.length + '개';
+  document.getElementById('chips').innerHTML = b.tags.map((t, i) =>
+    '<span class="chip ' + KIND[t[0]] + '" style="animation-delay:' + (reduce ? 0 : i * 0.07) + 's">'
+    + t[1] + '<span class="cf">' + t[2].toFixed(2) + '</span></span>'
+  ).join('');
+
+  const json = {
+    isbn: b.isbn, title: b.t, additional_code: b.addl,
+    generated_at: '2026-08-11T08:12:04+09:00',
+    source: ['본문 목차', '서평 42건', '도서관 대출 기록'],
+    review_required: true,
+    tags: b.tags.map(t => ({ kind: t[0], label: t[1], confidence: t[2] }))
+  };
+  document.getElementById('jsonOut').innerHTML = colorJSON(json);
+});
+
+function colorJSON(obj) {
+  return JSON.stringify(obj, null, 2)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/"([^"]+)":/g, '<span class="k">"$1"</span>:')
+    .replace(/: "([^"]*)"/g, ': <span class="s">"$1"</span>')
+    .replace(/: (true|false|[0-9.]+)/g, ': <span class="n">$1</span>');
+}
+
+/* ═══════════ init ═══════════ */
+renderBrief();
+buildHeat();
+pickCell(3, 7);          // 아동 · 8월
+document.querySelector('#heat .cell[data-r="3"][data-c="7"]').classList.add('pick');
+runChecks();
+buildPicker();
+
+/* 기본 화면 고정: brief (+해시 입력 시 해시 우선) */
+(function(){
+  const h=(location.hash||'').replace('#','');
+  const v=h||'brief';
+  const b=document.querySelector('.nav button[data-view="'+v+'"]');
+  if(b) b.click();
+  window.addEventListener('hashchange',()=>{
+    const x=(location.hash||'').replace('#','');
+    const bb=document.querySelector('.nav button[data-view="'+x+'"]'); if(bb) bb.click();
+  });
+})();
+</script>
+</body>
+</html>
