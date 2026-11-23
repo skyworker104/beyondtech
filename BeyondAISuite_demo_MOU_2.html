@@ -1,0 +1,1282 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>body{margin:0}[hidden]{display:none!important}</style>
+<title>Beyond AI Suite</title>
+<meta name="description" content="Beyond AI Suite 유지관리 지원 포털 시연 (일상점검 · Ops)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: operations console — fixed left rail of modules, work area on the right; rail becomes a top strip on phones */
+:root{
+  --bg:#EEF1F5; --surface:#FFFFFF; --sunk:#F6F8FB; --ink:#132036; --muted:#5A667A; --line:#D9E0E9;
+  --brand:#0F2A5F; --brand-ink:#FFFFFF; --accent:#2457B8; --accent-soft:#E6EDFA;
+  --good:#1E7F4E; --good-soft:#E3F3EA; --warn:#A8660B; --warn-soft:#FBF0DC; --crit:#BC3A26; --crit-soft:#FBE6E2;
+  --plan:#6B5BA8; --plan-soft:#EEEAF8;
+  --t1:#2457B8; --t2:#0F8A86; --t3:#C2562F; --t4:#7A55B8; --t5:#3E8E5E; --t6:#A27418;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+  --r:6px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0C121C; --surface:#131B28; --sunk:#0F1622; --ink:#E4E9F1; --muted:#93A0B5; --line:#243146;
+  --brand:#1B3A78; --brand-ink:#FFFFFF; --accent:#82A6EE; --accent-soft:#1A2A47;
+  --good:#5CC48E; --good-soft:#15301F; --warn:#E3A74A; --warn-soft:#332611; --crit:#F0806C; --crit-soft:#3A1A15;
+  --plan:#B3A6EA; --plan-soft:#28223F; --t1:#82A6EE; --t2:#4FC7C1; --t3:#F08A62; --t4:#B79AEE; --t5:#73C795; --t6:#E0B35A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0C121C; --surface:#131B28; --sunk:#0F1622; --ink:#E4E9F1; --muted:#93A0B5; --line:#243146;
+  --brand:#1B3A78; --brand-ink:#FFFFFF; --accent:#82A6EE; --accent-soft:#1A2A47;
+  --good:#5CC48E; --good-soft:#15301F; --warn:#E3A74A; --warn-soft:#332611; --crit:#F0806C; --crit-soft:#3A1A15;
+  --plan:#B3A6EA; --plan-soft:#28223F; --t1:#82A6EE; --t2:#4FC7C1; --t3:#F08A62; --t4:#B79AEE; --t5:#73C795; --t6:#E0B35A; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.55}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.num{font-variant-numeric:tabular-nums}
+
+.app{display:grid;grid-template-columns:232px minmax(0,1fr);grid-template-rows:auto 1fr;min-height:100%}
+.top{grid-column:1/-1;display:flex;align-items:center;gap:16px;padding:10px 20px;background:var(--brand);color:var(--brand-ink);flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.01em;font-size:16px}
+.logo-mark{width:28px;height:28px;border-radius:5px;background:var(--brand-ink);color:var(--brand);display:grid;place-items:center;font-weight:700;font-family:var(--f-mono)}
+.top .ctx{font-size:13px;opacity:.85;border-left:1px solid rgba(255,255,255,.25);padding-left:16px}
+.top .spacer{flex:1}
+.chip-top{font-size:12px;padding:3px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.35)}
+.rail{background:var(--surface);border-right:1px solid var(--line);padding:16px 12px;display:flex;flex-direction:column;gap:2px}
+.rail h6{margin:14px 10px 6px;font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.nav{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border:0;background:none;border-radius:var(--r);text-align:left;text-decoration:none;color:var(--ink)}
+.nav:hover{background:var(--sunk)}
+.nav[aria-current="true"]{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.nav .k{font-family:var(--f-mono);font-size:11px;width:26px;height:22px;display:grid;place-items:center;border-radius:4px;background:var(--sunk);color:var(--muted);flex:none}
+.nav[aria-current="true"] .k{background:var(--accent);color:var(--surface)}
+.nav .ext{margin-left:auto;font-size:12px;color:var(--muted)}
+.dot{width:7px;height:7px;border-radius:50%;margin-left:auto;flex:none}
+.dot.good{background:var(--good)} .dot.pilot{background:var(--warn)} .dot.plan{background:var(--plan)}
+.legend{margin-top:auto;padding:12px 10px 0;border-top:1px solid var(--line);font-size:12px;color:var(--muted);display:grid;gap:4px}
+.legend span{display:flex;align-items:center;gap:8px}
+.legend .dot{margin:0}
+
+main{padding-block:20px 40px;padding-inline:24px;min-width:0}
+.mock{display:flex;gap:10px;align-items:center;font-size:12.5px;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:var(--r);padding:8px 12px;margin-bottom:18px}
+.mock b{color:var(--ink);font-weight:600}
+.vhead{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.vhead h1{font-size:22px;margin:0;font-weight:700;text-wrap:balance}
+.vhead p{margin:0;color:var(--muted);flex-basis:100%}
+.badge{font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.b-good{background:var(--good-soft);color:var(--good)} .b-pilot{background:var(--warn-soft);color:var(--warn)} .b-plan{background:var(--plan-soft);color:var(--plan)}
+.b-crit{background:var(--crit-soft);color:var(--crit)} .b-muted{background:var(--sunk);color:var(--muted)} .b-acc{background:var(--accent-soft);color:var(--accent)}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);min-width:0}
+.panel>header{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.panel>header h2{font-size:14.5px;margin:0;font-weight:600}
+.panel>header .sub{color:var(--muted);font-size:12.5px}
+.panel>header .act{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.pb{padding:14px 16px}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.g-main{grid-template-columns:minmax(0,1.45fr) minmax(0,1fr)}
+
+.kpi{padding:14px 16px}
+.kpi .l{font-size:12.5px;color:var(--muted)}
+.kpi .v{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px}
+.kpi .s{font-size:12px;color:var(--muted)}
+
+.btn{border:1px solid var(--line);background:var(--surface);padding:6px 12px;border-radius:var(--r);font-size:13px;display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:var(--ink)}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.btn.pri:hover{filter:brightness(1.08);color:var(--surface)}
+.btn.sm{padding:3px 9px;font-size:12px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-weight:600;color:var(--muted);text-align:left;font-size:12px;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--sunk)}
+td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+tbody tr.click{cursor:pointer}
+tbody tr.click:hover td{background:var(--sunk)}
+tbody tr.sel td{background:var(--accent-soft)}
+.tw{overflow-x:auto}
+
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:16px;overflow-x:auto}
+.tab{border:0;background:none;padding:9px 14px;border-bottom:2px solid transparent;color:var(--muted);font-weight:500;white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--accent);border-color:var(--accent);font-weight:600}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.seg button{border:0;background:var(--surface);padding:4px 10px;font-size:12.5px;color:var(--muted)}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent);font-weight:600}
+select,input[type=text],textarea{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:6px 10px}
+textarea{width:100%;resize:vertical;min-height:90px;line-height:1.6}
+
+/* home module cards */
+.mods{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.mod{display:flex;flex-direction:column;gap:10px;padding:16px}
+.mod .t{display:flex;align-items:center;gap:10px}
+.mod .t .k{font-family:var(--f-mono);font-size:12px;font-weight:500;width:34px;height:28px;display:grid;place-items:center;border-radius:5px;background:var(--brand);color:var(--brand-ink)}
+.mod.planned .t .k{background:var(--plan-soft);color:var(--plan)}
+.mod h3{margin:0;font-size:15.5px}
+.mod .d{color:var(--muted);font-size:13px;min-height:42px}
+.mod .stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;border-top:1px solid var(--line);padding-top:10px}
+.mod .stats div{font-size:12px;color:var(--muted)}
+.mod .stats b{display:block;font-size:16px;color:var(--ink);font-variant-numeric:tabular-nums}
+.mod .go{display:flex;justify-content:space-between;align-items:center;margin-top:2px}
+.feed{list-style:none;margin:0;padding:0}
+.feed li{display:grid;grid-template-columns:54px 66px minmax(0,1fr);gap:10px;padding:9px 16px;border-bottom:1px solid var(--line);font-size:13px;align-items:baseline}
+.feed li:last-child{border:0}
+.feed .tm{color:var(--muted)}
+
+.pill{font-size:11.5px;font-weight:600;padding:1px 8px;border-radius:4px;white-space:nowrap}
+.p-ok{background:var(--good-soft);color:var(--good)} .p-warn{background:var(--warn-soft);color:var(--warn)} .p-crit{background:var(--crit-soft);color:var(--crit)} .p-mute{background:var(--sunk);color:var(--muted)} .p-acc{background:var(--accent-soft);color:var(--accent)}
+.alert{display:flex;gap:10px;align-items:flex-start;padding:10px 14px;border-radius:var(--r);background:var(--warn-soft);color:var(--ink);font-size:13px;border-left:3px solid var(--warn)}
+.alert.crit{background:var(--crit-soft);border-color:var(--crit)}
+.alert.ok{background:var(--good-soft);border-color:var(--good)}
+.bar{height:6px;background:var(--sunk);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:3px;transition:width .4s}
+.check{display:flex;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}
+.check:last-child{border:0}
+.check input{width:16px;height:16px;accent-color:var(--accent)}
+.check.done span{color:var(--muted)}
+.report{font-size:13px;line-height:1.75;background:var(--sunk);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;white-space:pre-wrap}
+.report h4{margin:0 0 6px;font-size:14px}
+
+/* content calendar */
+.cal-wrap{overflow-x:auto}
+.cal-g{display:grid;grid-template-columns:repeat(7,minmax(92px,1fr));min-width:680px}
+.cal-g .wd{font-size:12px;font-weight:600;color:var(--muted);padding:7px 10px;background:var(--sunk);border-bottom:1px solid var(--line)}
+.cal-g .wd.sun{color:var(--crit)}
+.day{min-height:96px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:5px 5px 7px;font-size:12px}
+.day:nth-child(7n){border-right:0}
+.day .dn{font-weight:600;color:var(--muted);font-size:12px;margin:0 0 3px 3px;font-variant-numeric:tabular-nums}
+.day.off{background:var(--sunk)}.day.off .dn{opacity:.45}
+.day.today .dn{background:var(--accent);color:var(--surface);border-radius:999px;display:inline-block;padding:0 7px}
+.ev{display:block;width:100%;text-align:left;border:0;border-left:3px solid var(--tc);border-radius:4px;padding:3px 6px;margin:2px 0;font-size:11.5px;font-weight:500;line-height:1.35;background:var(--sunk);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ev:hover{background:var(--accent-soft)}
+.ev[aria-current="true"]{box-shadow:0 0 0 2px var(--accent)}
+.ev .st{font-size:10.5px;font-weight:700;margin-right:4px;color:var(--tc)}
+.flt{display:flex;gap:6px;flex-wrap:wrap}
+.flt button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:3px 10px;font-size:12px;display:flex;align-items:center;gap:6px;color:var(--ink)}
+.flt button i{width:8px;height:8px;border-radius:2px;background:var(--tc)}
+.flt button[aria-pressed="false"]{opacity:.4}
+.flow{display:flex;gap:4px;margin:12px 0}
+.flow span{flex:1;text-align:center;font-size:11.5px;font-weight:600;padding:6px 2px;border-radius:4px;background:var(--sunk);color:var(--muted)}
+.flow span.done{background:var(--accent-soft);color:var(--accent)}
+.flow span.cur{background:var(--accent);color:var(--surface)}
+.chk{list-style:none;margin:6px 0 12px;padding:0}
+.chk li{border-bottom:1px solid var(--line);padding:7px 0}
+.chk label{display:flex;gap:10px;align-items:flex-start;font-size:13px}
+.chk input{width:16px;height:16px;margin-top:2px;accent-color:var(--good)}
+.chk small{display:block;color:var(--muted);font-size:12px}
+.tchip{font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:4px;color:var(--tc);border:1px solid var(--tc)}
+.up{list-style:none;margin:0;padding:0}
+.up li{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 16px;border-bottom:1px solid var(--line);font-size:13px;cursor:pointer}
+.up li:hover{background:var(--sunk)}
+.up li:last-child{border:0}
+.fm{display:grid;gap:10px}
+.fm label{font-size:12px;color:var(--muted);display:grid;gap:4px}
+.fm .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fm select,.fm input{width:100%}
+
+/* call */
+.queue{max-height:430px;overflow:auto}
+.q{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;padding:10px 16px;border-bottom:1px solid var(--line);cursor:pointer;border-left:3px solid transparent}
+.q:hover{background:var(--sunk)}
+.q.sel{background:var(--accent-soft);border-left-color:var(--accent)}
+.q .tt{font-weight:600;font-size:13.5px;min-width:0}
+.q .mt{font-size:12px;color:var(--muted);grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}
+.kv{display:grid;grid-template-columns:88px minmax(0,1fr);gap:6px 12px;font-size:13px}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0}
+.src{display:inline-flex;gap:6px;align-items:center;font-size:12px;padding:2px 8px;border:1px solid var(--line);border-radius:4px;color:var(--muted);margin:4px 6px 0 0}
+.bars{display:grid;gap:8px}
+.bars .r{display:grid;grid-template-columns:92px minmax(0,1fr) 30px;gap:10px;align-items:center;font-size:12.5px}
+.bars .r .bar{height:10px}
+
+/* sentinel */
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.tile{padding:12px 14px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);border-top:3px solid var(--good);min-width:0}
+.tile.warn{border-top-color:var(--warn)} .tile.crit{border-top-color:var(--crit);background:var(--crit-soft)}
+.tile .n{font-weight:600;font-size:13px}
+.tile .ty{font-size:11.5px;color:var(--muted)}
+.tile .m{display:flex;justify-content:space-between;align-items:flex-end;margin-top:6px}
+.tile .m b{font-size:18px;font-variant-numeric:tabular-nums}
+.tile svg{width:84px;height:26px;display:block}
+.tl{list-style:none;margin:0;padding:0;border-left:2px solid var(--line);margin-left:6px}
+.tl li{position:relative;padding:0 0 12px 16px;font-size:13px}
+.tl li::before{content:"";position:absolute;left:-6px;top:6px;width:10px;height:10px;border-radius:50%;background:var(--surface);border:2px solid var(--accent)}
+.tl li.c::before{border-color:var(--crit)} .tl li.g::before{border-color:var(--good)}
+.tl .tm{font-family:var(--f-mono);font-size:12px;color:var(--muted);margin-right:6px}
+.empty{color:var(--muted);font-size:13px;padding:24px 16px;text-align:center}
+
+/* etl */
+.spark{display:flex;align-items:flex-end;gap:6px;height:90px;padding-top:6px}
+.spark div{flex:1;background:var(--accent);opacity:.75;border-radius:2px 2px 0 0;position:relative;min-height:2px}
+.spark div.last{opacity:1}
+.spark div.low{background:var(--warn)}
+.spark-x{display:flex;gap:6px;font-size:11px;color:var(--muted)}
+.spark-x span{flex:1;text-align:center}
+.diff{font-family:var(--f-mono);font-size:12.5px;background:var(--sunk);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;white-space:pre;overflow-x:auto}
+.diff .add{color:var(--good)} .diff .del{color:var(--crit)}
+.prog{height:8px;border-radius:4px;background:var(--sunk);overflow:hidden;margin-top:8px}
+.prog i{display:block;height:100%;width:0;background:var(--good);transition:width .25s linear}
+
+.toast{position:fixed;right:20px;bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:var(--r);font-size:13px;opacity:0;transform:translateY(8px);transition:.2s;pointer-events:none;z-index:9;max-width:calc(100% - 40px)}
+.toast.on{opacity:1;transform:none}
+
+@media (max-width:1100px){.mods{grid-template-columns:repeat(2,minmax(0,1fr))}.g4,.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.g-main,.g3{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:760px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .rail{flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line);padding:8px 16px;gap:4px}
+  .rail h6,.legend,.nav .dot{display:none}
+  .nav{width:auto;white-space:nowrap}
+  main{padding-inline:16px}
+  .top{padding:10px 16px}.top .ctx{border:0;padding:0;flex-basis:100%}
+  .mods,.g2,.g4{grid-template-columns:minmax(0,1fr)}
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .feed li{grid-template-columns:48px minmax(0,1fr)}.feed li .who{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* ---------- v2 additions ---------- */
+.rail{gap:1px}
+.nav .cnt{margin-left:auto;font-size:11px;font-weight:700;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--crit);color:#fff;display:grid;place-items:center}
+.nav .cnt[data-z="1"]{background:var(--good)}
+.nav .code{margin-left:auto;font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.nav.parent .chev{margin-left:6px;font-size:10px;color:var(--muted);transition:transform .2s}
+.nav.parent[data-open="true"] .chev{transform:rotate(90deg)}
+.nav.parent[data-open="true"]{font-weight:600}
+.subnav{display:grid;gap:1px;margin:0 0 4px 22px;padding-left:10px;border-left:1px solid var(--line)}
+.subnav .nav{padding:6px 10px;font-size:13px}
+.subnav .nav[aria-current="true"]{background:var(--accent-soft)}
+.nav.parent[aria-current="true"]{background:none;color:var(--ink)}
+.nav.parent[aria-current="true"] .k{background:var(--accent);color:var(--surface)}
+.foot{margin-top:24px;padding-top:12px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+.ref{font-size:12px;font-weight:600;color:var(--accent);white-space:nowrap}
+.vhead .ref{align-self:center}
+.lnk{border:0;background:none;padding:0;color:var(--accent);font-size:12.5px;text-decoration:underline;text-underline-offset:2px}
+
+/* daily dashboard */
+.dcard{padding:16px;display:flex;flex-direction:column;gap:10px;cursor:pointer;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:var(--r)}
+.dcard:hover{border-color:var(--accent)}
+.dcard .h{font-size:12px;color:var(--muted);display:flex;gap:8px;align-items:center}
+.dcard .h b{color:var(--ink);font-weight:600}
+.dcard .t{font-size:16px;font-weight:700}
+.dcard .pp{display:flex;gap:6px;flex-wrap:wrap}
+.dcard .f{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);border-top:1px dashed var(--line);padding-top:10px;gap:8px}
+.mk{display:inline-flex;align-items:center;gap:5px}
+.mk::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
+.mk.tri::before{border-radius:0;width:0;height:0;background:none;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:9px solid currentColor}
+.mk.sq::before{border-radius:1px}
+.mk.ring::before{background:none;border:1.5px solid currentColor;width:7px;height:7px}
+.dcal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.dcal .wd{font-size:12px;color:var(--muted);text-align:center;padding:2px 0}
+.dcal .wd.sun{color:var(--crit)}
+.dd{border:1px solid var(--line);border-radius:4px;min-height:54px;padding:5px 7px;font-size:12px;display:flex;flex-direction:column;justify-content:space-between;background:var(--surface)}
+.dd .n{color:var(--muted);font-variant-numeric:tabular-nums}
+.dd.fut{background:var(--sunk)}
+.dd.blank{border:0;background:none}
+.dd.today{border:2px solid var(--accent)}
+.dd .m{display:flex;gap:5px;align-items:center;height:12px}
+.dd .m i{width:9px;height:9px;border-radius:50%;display:block}
+.dd .m i.ok{background:var(--good)} .dd .m i.no{border:1.5px solid var(--muted);width:9px;height:9px}
+.dd .m i.lt{width:0;height:0;border-radius:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:9px solid var(--warn)}
+.steps{list-style:none;margin:0;padding:0}
+.steps li{display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);font-size:13px}
+.steps li:last-child{border:0}
+.steps .tm{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.evi{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.evi div{background:var(--sunk);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;font-size:12.5px;position:relative}
+.evi b{display:block;font-size:13px;margin-bottom:2px}
+.evi span{color:var(--muted)}
+.evi em{font-style:normal;font-family:var(--f-mono);font-size:11px;color:var(--accent);font-weight:600}
+
+/* servers */
+.srv .rows{display:grid;gap:9px;padding:14px 16px}
+.srv .r{display:grid;grid-template-columns:96px minmax(0,1fr) 42px;gap:10px;align-items:center;font-size:12.5px}
+.srv .r span:first-child{color:var(--muted)}
+.gauge{height:8px;background:var(--sunk);border-radius:4px;position:relative}
+.gauge i{display:block;height:100%;border-radius:4px;background:var(--accent)}
+.gauge i.w{background:var(--warn)}
+.gauge b{position:absolute;top:-3px;width:2px;height:14px;background:var(--ink);opacity:.55}
+.srv .kv2{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:12.5px;padding:0 16px 10px}
+.srv .kv2 dt{color:var(--muted)} .srv .kv2 dd{margin:0;text-align:right}
+.cpu7{padding:0 16px 14px}
+.cpu7 .c{display:flex;align-items:flex-end;gap:5px;height:56px;position:relative;border-bottom:1px solid var(--line)}
+.cpu7 .c i{flex:1;background:var(--accent-soft);border:1px solid var(--accent);border-bottom:0;border-radius:2px 2px 0 0;opacity:.8}
+.cpu7 .c i.last{background:var(--accent);opacity:1}
+.cpu7 .c .th{position:absolute;left:0;right:0;border-top:1.5px dashed var(--warn)}
+.cpu7 .l{font-size:12px;color:var(--muted);margin-bottom:6px}
+.srv footer{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+
+/* screenshot mock (always light — it is a captured web page) */
+.shot{width:32em;height:20em;border:1px solid #CBD3DF;border-radius:.5em;overflow:hidden;background:#fff;color:#1d2533;position:relative;font-family:var(--f-body);flex:none;line-height:1.3}
+.shot .sb{height:1.9em;background:#E7EBF1;display:flex;align-items:center;gap:.35em;padding:0 .7em}
+.shot .sb i{width:.6em;height:.6em;border-radius:50%;background:#C2C9D4}
+.shot .sb span{margin-left:.6em;flex:1;height:1.15em;background:#fff;border-radius:.3em;font-size:.72em;line-height:1.6em;padding-left:.7em;color:#6b7686;overflow:hidden;white-space:nowrap}
+.shot .sc{position:absolute;inset:1.9em 0 0 0}
+.s-hd{height:2.6em;display:flex;align-items:center;gap:1em;padding:0 1.2em;border-bottom:1px solid #E3E7EE}
+.s-logo{width:5.4em;height:1.2em;background:#0F2A5F;border-radius:.2em}
+.s-nav{display:flex;gap:.9em;margin-left:auto}.s-nav i{width:2.6em;height:.5em;background:#9AA6B8;border-radius:.2em}
+.s-hero{margin:1em 1.2em .9em;height:5.4em;border-radius:.4em;background:linear-gradient(120deg,#2457B8,#0F8A86);padding:1.1em 1.3em;display:flex;flex-direction:column;gap:.55em}
+.s-hero i{height:.75em;background:rgba(255,255,255,.9);border-radius:.2em;width:55%}.s-hero i+i{width:34%;opacity:.65}
+.s-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:.8em;margin:0 1.2em}.s-tiles i{height:3.1em;background:#EEF1F6;border-radius:.3em;border:1px solid #E1E6EE}
+.s-list{margin:.9em 1.2em;display:grid;gap:.5em}.s-list i{height:.48em;background:#DDE2EA;border-radius:.2em}.s-list i:nth-child(2){width:80%}.s-list i:nth-child(3){width:65%}
+.s-app{position:absolute;inset:0;display:grid;grid-template-columns:6.4em 1fr;grid-template-rows:2.2em 1fr}
+.s-app .tb{grid-column:1/-1;background:#1F3B6E;display:flex;align-items:center;padding:0 1em;gap:.8em}.s-app .tb i{width:4.5em;height:.7em;background:rgba(255,255,255,.85);border-radius:.2em}.s-app .tb i+i{width:2.4em;margin-left:auto;opacity:.6}
+.s-app .lm{background:#F1F4F8;border-right:1px solid #E1E6EE;padding:.8em .7em;display:grid;align-content:start;gap:.6em}.s-app .lm i{height:.5em;background:#B9C3D2;border-radius:.2em}.s-app .lm i:first-child{background:#2457B8}
+.s-app .ct{padding:.9em 1em;display:grid;align-content:start;gap:.55em}
+.s-app .ct .ti{height:.8em;width:40%;background:#33415a;border-radius:.2em}
+.s-app .ct .fl{display:flex;gap:.5em}.s-app .ct .fl i{height:1.3em;flex:1;border:1px solid #D5DCE6;border-radius:.2em}.s-app .ct .fl i:last-child{flex:.4;background:#2457B8;border:0}
+.s-app .ct .tr{height:1.1em;border-bottom:1px solid #E3E7EE;background:linear-gradient(90deg,#DDE2EA 0 18%,transparent 18% 24%,#E7EBF0 24% 62%,transparent 62% 70%,#E7EBF0 70% 88%,transparent 88%)}
+.s-app .ct .tr.h{background:#EEF1F6}
+.s-app.adm .tb{background:#3B3F48}.s-app.adm .lm i:first-child{background:#6B5BA8}
+.s-err{padding:1.4em 1.6em;font-family:"Times New Roman",serif}
+.s-err h5{margin:0 0 .5em;font-size:1.65em;font-weight:700}
+.s-err hr{border:0;border-top:1px solid #bbb;margin:.6em 0}
+.s-err p{margin:0;font-size:.9em;color:#555}
+.s-mt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.6em;background:#F7F9FC}
+.s-mt .ic{width:3em;height:3em;border-radius:50%;border:.3em solid #A8660B;display:grid;place-items:center;color:#A8660B;font-weight:700;font-size:1em}
+.s-mt b{font-size:1.35em}
+.s-mt span{font-size:.85em;color:#5a667a}
+.s-chat{position:absolute;inset:0;display:flex;flex-direction:column}
+.s-chat .ch{height:2.4em;background:#0F8A86;display:flex;align-items:center;padding:0 1em}.s-chat .ch i{width:5em;height:.7em;background:rgba(255,255,255,.9);border-radius:.2em}
+.s-chat .bd{flex:1;padding:.9em 1em;display:flex;flex-direction:column;gap:.6em;background:#F4F7FA}
+.s-chat .bb{height:1.6em;border-radius:.8em;background:#fff;border:1px solid #DDE3EB;width:60%}.s-chat .bb.me{align-self:flex-end;background:#D7EEEC;border:0;width:45%}
+.s-chat .in{height:2.2em;border-top:1px solid #DDE3EB;background:#fff}
+.shot .lat{position:absolute;right:.6em;bottom:.6em;background:#A8660B;color:#fff;font-weight:700;font-size:.9em;padding:.15em .5em;border-radius:.3em;font-family:var(--f-mono)}
+.thumb{font-size:4.6px;border:0;background:none;padding:0;display:block;cursor:zoom-in;border-radius:3px}
+.thumb:hover .shot{outline:2px solid var(--accent)}
+.shot-md{font-size:9.5px}
+.shot-lg{font-size:21px}
+dialog{border:1px solid var(--line);border-radius:8px;padding:0;background:var(--surface);color:var(--ink);max-width:calc(100vw - 32px)}
+dialog::backdrop{background:rgba(10,16,28,.55)}
+dialog header{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+dialog .db{padding:16px;overflow:auto}
+.tm3{font-size:12px;line-height:1.5;font-variant-numeric:tabular-nums}
+.tm3 span{color:var(--muted)}
+.why{font-size:12.5px;color:var(--muted);margin-top:4px}
+.trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:16px}
+.trio .panel{padding:14px 16px;font-size:13px}
+.trio b{display:block;margin-bottom:4px;font-size:14px}
+.trio p{margin:0;color:var(--muted)}
+.cap{display:block;font-size:11.5px;color:var(--muted);margin-top:4px}
+
+/* review queue */
+.rq{list-style:none;margin:0;padding:0}
+.rq li{padding:11px 16px;border-bottom:1px solid var(--line);cursor:pointer;border-left:3px solid transparent;display:grid;gap:3px}
+.rq li:hover{background:var(--sunk)}
+.rq li.sel{background:var(--accent-soft);border-left-color:var(--accent)}
+.rq li.done{opacity:.6}
+.rq .tt{font-weight:600;font-size:13.5px;display:flex;gap:8px;align-items:center}
+.rq .mt{font-size:12px;color:var(--muted)}
+.cmp{display:flex;gap:14px;flex-wrap:wrap}
+.cmp figure{margin:0}
+.cmp figcaption{font-size:12px;color:var(--muted);margin-top:5px}
+.met{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:14px 0}
+.met div{background:var(--sunk);border-radius:var(--r);padding:8px 10px;font-size:12px;color:var(--muted)}
+.met b{display:block;font-size:15px;color:var(--ink);font-variant-numeric:tabular-nums}
+.opts{display:grid;gap:6px;margin:8px 0 12px}
+.opts label{display:flex;gap:8px;align-items:center;font-size:13px;border:1px solid var(--line);border-radius:var(--r);padding:7px 10px;cursor:pointer}
+.opts label:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.opts input{accent-color:var(--accent)}
+.sign{display:flex;gap:0;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;font-size:12px}
+.sign div{min-width:84px;text-align:center;border-left:1px solid var(--line)}
+.sign div:first-child{border:0}
+.sign span{display:block;background:var(--sunk);padding:3px 8px;color:var(--muted);border-bottom:1px solid var(--line)}
+.sign b{display:block;padding:6px 8px;font-weight:600;min-height:44px}
+.sign b small{display:block;font-weight:400;color:var(--muted);font-family:var(--f-mono)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:4px 12px;font-size:12.5px;display:flex;gap:6px;align-items:center;color:var(--ink)}
+.chips button b{font-variant-numeric:tabular-nums}
+.chips button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:600}
+.qa{display:grid;gap:8px}
+.qa .q1{align-self:end;justify-self:end;background:var(--accent);color:var(--surface);padding:7px 12px;border-radius:10px 10px 2px 10px;font-size:13px;max-width:90%}
+.qa .a1{background:var(--sunk);border:1px solid var(--line);padding:10px 12px;border-radius:10px 10px 10px 2px;font-size:13px;max-width:96%}
+.stage5{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-bottom:16px}
+.stage5>div{border:1px solid var(--line);border-radius:var(--r);padding:9px 11px;font-size:12px;background:var(--surface)}
+.stage5>div b{display:block;font-size:13px;margin-bottom:3px}
+.stage5>div span{color:var(--muted)}
+.stage5>div.done{border-color:var(--accent);background:var(--accent-soft)}
+.stage5>div.cur{border:2px solid var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.grp{font-size:12px;font-weight:600;color:var(--muted);margin:12px 0 2px}
+.grp:first-child{margin-top:0}
+.info{display:grid;gap:12px;font-size:13px}
+.info b{display:block;margin-bottom:2px}
+.info ul{margin:0;padding-left:18px;color:var(--muted)}
+.layer{display:flex;gap:8px;align-items:center;margin:0 0 4px}
+@media (max-width:1100px){.evi{grid-template-columns:repeat(2,minmax(0,1fr))}.trio{grid-template-columns:minmax(0,1fr)}.stage5{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:760px){.subnav{margin:0;border:0;padding:0;display:flex;gap:4px}.met{grid-template-columns:repeat(2,minmax(0,1fr))}.stage5{grid-template-columns:minmax(0,1fr)}.evi{grid-template-columns:minmax(0,1fr)}.nav .code,.nav .chev{display:none}}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="top">
+    <div class="logo"><span class="logo-mark">B</span>Beyond AI Suite</div>
+    <div class="ctx">북한이탈주민 종합관리시스템 유지관리 <span style="opacity:.7">(샘플 프로젝트)</span></div>
+    <div class="spacer"></div>
+    <span class="chip-top">2027.03.15 (월) 점검일</span>
+    <span class="chip-top">안정성 등급 A4</span>
+    <span class="chip-top">로컬 LLM · 외부 전송 없음</span>
+    <span class="chip-top">운영 PM</span>
+  </div>
+
+  <nav class="rail" aria-label="메뉴">
+    <button class="nav" data-view="home"><span class="k">⌂</span>포털 홈</button>
+
+    <h6>일상점검 · 고시 별표 2</h6>
+    <button class="nav" data-view="daily"><span class="k">DC</span>일상점검 현황</button>
+    <div class="subnav">
+      <button class="nav" data-view="sys">시스템 상태 점검<span class="code">2.1.1</span></button>
+      <button class="nav" data-view="svc">서비스 점검<span class="code">2.1.2</span></button>
+      <button class="nav" data-view="val">유효성 점검<span class="code">2.1.3</span></button>
+      <button class="nav" data-view="jrn">점검 일지</button>
+      <button class="nav" data-view="rvq">검토 대기함<span class="cnt" id="rq-cnt">3</span></button>
+    </div>
+
+    <h6>업무 모듈</h6>
+    <button class="nav parent" data-view="ops-sla" data-group="ops"><span class="k">OP</span>Ops<span class="chev">▶</span><span class="dot good" title="보유"></span></button>
+    <div class="subnav" id="ops-sub">
+      <button class="nav" data-view="ops-sla">SLA 지표</button>
+      <button class="nav" data-view="ops-sr">SR 관리</button>
+      <button class="nav" data-view="ops-chk">정기점검</button>
+      <button class="nav" data-view="ops-cal">콘텐츠 편성표</button>
+      <button class="nav" data-view="ops-rep">월간 보고서</button>
+    </div>
+    <button class="nav" data-view="call"><span class="k">CL</span>Call<span class="dot good" title="보유"></span></button>
+    <button class="nav" data-view="sentinel"><span class="k">SN</span>Sentinel<span class="dot good" title="보유"></span></button>
+    <button class="nav" data-view="etl"><span class="k">ET</span>ETL<span class="dot good" title="보유"></span></button>
+    <h6>연결 앱 · 새 탭</h6>
+    <a class="nav" href="http://210.126.31.185:63080/" target="_blank" rel="noopener"><span class="k">FL</span>Flow<span class="ext">새 탭 ↗</span></a>
+    <a class="nav" href="http://210.126.31.181:5555/login?next=%2F" target="_blank" rel="noopener"><span class="k">TD</span>TDS<span class="ext">새 탭 ↗</span></a>
+    <div class="legend">
+      <span><i class="dot good"></i>자사 보유 솔루션 6종</span>
+    </div>
+  </nav>
+
+  <main id="main">
+
+    <!-- HOME -->
+    <section data-v="home">
+      <div class="vhead"><h1>유지관리 지원 포털</h1><p>안정성 고시 일상점검과 6개 모듈의 점검·기록·보고를 한 화면에서 관리합니다. Flow와 TDS는 실제 시스템이 새 탭에서 열립니다.</p></div>
+      <div class="grid g4" style="margin-bottom:16px">
+        <div class="panel kpi"><div class="l">이번 달 응용 S/W 가동률</div><div class="v" id="k-avail">99.97%</div><div class="s">QUR-01 · Sentinel 가동 기록</div></div>
+        <div class="panel kpi"><div class="l">일상점검 당일 확인 (3월)</div><div class="v" id="k-daily">14/15일</div><div class="s" id="k-daily-s">고시 2.1.1~2.1.3 · 검토 대기 3건</div></div>
+        <div class="panel kpi"><div class="l">처리 중 서비스 요청(SR)</div><div class="v" id="k-sr">0건</div><div class="s" id="k-sr-s">평균 처리 0.0일 · Ops</div></div>
+        <div class="panel kpi"><div class="l">연계 수신 정상</div><div class="v" id="k-etl">0/0</div><div class="s">오늘 06:00 기준 · ETL</div></div>
+      </div>
+      <div class="mods" id="mods"></div>
+      <div class="grid g-main" style="margin-top:16px">
+        <div class="panel"><header><h2>최근 활동</h2><span class="sub">모듈 전체</span></header><ul class="feed" id="feed"></ul></div>
+        <div class="panel"><header><h2>단계별 적용 계획</h2><span class="sub">발주기관 승인 후 적용</span></header>
+          <div class="pb" style="display:grid;gap:12px;font-size:13px">
+            <div><span class="badge b-good">1단계 · 1~3월</span><div style="margin-top:4px">Sentinel 자원 감시·자동 전파 · Ops 화면 점검·SLA 수집 · TDS 현행 DB 표준 진단</div></div>
+            <div><span class="badge b-plan">2단계 · 4~9월</span><div style="margin-top:4px">ETL 연계 수신 점검 · Flow 운영 지식 축적 · Call 접수·통계</div></div>
+            <div><span class="badge b-muted">3단계 · 10~12월</span><div style="margin-top:4px">Call 답변 추천 · Sentinel 원인 분석 등 적용 범위 확대 · 결과 보고</div></div>
+            <div class="alert ok" style="font-size:12.5px"><span>고시 A4 필수 15개 대응 · 일상점검(2.1.1~2.1.3) 자동 수행 · 축적 데이터와 점검 이력은 발주기관 자산</span></div>
+          </div></div>
+      </div>
+    </section>
+
+    <!-- DAILY DASHBOARD -->
+    <section data-v="daily" hidden>
+      <div class="vhead"><h1>일상점검 현황</h1><span class="ref">[별표 2] 2.1</span><p>안정성 고시 A4등급 일상점검 필수 3개 항목을 고시 주기 그대로 자동 수행하고, 운영자 확인까지 기록합니다.</p></div>
+      <div id="dc-alert" style="margin-bottom:16px"></div>
+      <div class="grid g3" style="margin-bottom:16px" id="dc-cards"></div>
+      <div class="grid g-main">
+        <div class="panel"><header><h2>3월 이행 기록</h2><span class="act" style="font-size:12px;color:var(--muted);gap:12px"><span class="mk" style="color:var(--good)">확인 완료</span><span class="mk tri" style="color:var(--warn)">지연 확인</span><span class="mk ring" style="color:var(--muted)">미확인</span></span></header>
+          <div class="pb"><div class="dcal" id="dc-cal"></div><p style="margin:10px 0 0;font-size:12.5px;color:var(--muted)" id="dc-cal-note"></p></div></div>
+        <div class="panel" style="align-self:start"><header><h2>오늘 점검 순서</h2><span class="sub">스케줄러 자동 실행</span></header><ul class="steps" id="dc-steps"></ul></div>
+      </div>
+      <div class="panel" style="margin-top:16px"><header><h2>증적 자동 생성</h2><span class="sub">「행정·공공기관 정보시스템 예방점검 매뉴얼」 서식 기준 · IRM 등록 증적</span></header>
+        <div class="pb"><div class="evi">
+          <div><em>01</em><b>지정 시각 자동 점검</b><span>스케줄러 매일 실행</span></div>
+          <div><em>02</em><b>결과·오류 화면 적재</b><span>내부 DB · 캡처 보관</span></div>
+          <div><em>03</em><b>일일 점검일지 생성</b><span>점검대상·항목·방법·결과</span></div>
+          <div><em>04</em><b>월간 결과 보고서</b><span>엑셀·PDF 자동 축적</span></div>
+          <div><em>05</em><b>운영자 확인·제출</b><span>확인 이력 · IRM 등록</span></div>
+        </div></div></div>
+    </section>
+
+    <!-- 2.1.1 SYSTEM -->
+    <section data-v="sys" hidden>
+      <div class="vhead"><h1>시스템 상태 점검</h1><span class="ref">[별표 2] 2.1.1</span><span class="badge b-acc">Beyond Sentinel</span><p>WEB·WAS·DBMS 상태와 서버 자원(CPU·메모리·디스크)을 수집 모듈이 5분마다 모아 하루 1회 상태 점검 일지로 남깁니다.</p></div>
+      <div class="alert ok" style="margin-bottom:16px;align-items:center"><b>확인 완료</b><span>오늘 상태 점검은 운영자가 확인했습니다 (05:30) · 3대 모두 정상</span><span style="margin-left:auto"><button class="btn sm" data-go="jrn">점검 일지 열기</button></span></div>
+      <div class="grid g3" id="srv"></div>
+      <div class="panel" style="margin-top:16px"><header><h2>판정 기준 (임계치, 서버 공통)</h2><span class="sub">발주기관 협의값 · 연 1회 최적화 기록 <span class="ref">[별표 2] 1.2.2</span></span></header>
+        <div class="tw"><table><thead><tr><th>항목</th><th class="num">경고</th><th class="num">위험</th><th>처리</th></tr></thead><tbody>
+          <tr><td>CPU (1분 평균)</td><td class="num">80%</td><td class="num">90%</td><td style="color:var(--muted)">5분 연속 초과 시 당번 전파 (Sentinel)</td></tr>
+          <tr><td>메모리</td><td class="num">85%</td><td class="num">95%</td><td style="color:var(--muted)">추이 급증 시 WAS 힙 덤프 확인</td></tr>
+          <tr><td>디스크 (파티션별)</td><td class="num">85%</td><td class="num">95%</td><td style="color:var(--muted)">로그 정리·증설 요청 SR 등록</td></tr>
+          <tr><td>프로세스 (WEB·WAS·DBMS)</td><td class="num" colspan="2" style="text-align:center">미동작 즉시 위험</td><td style="color:var(--muted)">자동 재기동 금지 · 담당자 확인 후 조치</td></tr>
+          <tr><td>미수신</td><td class="num" colspan="2" style="text-align:center">15분 이상 수집값 없음</td><td style="color:var(--muted)">수집 모듈 점검 · 일지에 사유 기록</td></tr>
+        </tbody></table></div></div>
+      <div class="foot">점검 대상·주기·보고 방식과 수집 모듈 설치 범위는 착수 시 발주기관과 협의하여 확정합니다. 화면의 수치는 모두 샘플 데이터입니다.</div>
+    </section>
+
+    <!-- 2.1.2 SERVICE -->
+    <section data-v="svc" hidden>
+      <div class="vhead"><h1>서비스 점검</h1><span class="ref">[별표 2] 2.1.2</span><span class="badge b-acc">Beyond Ops · 로컬 AI 판정</span><p>로컬 AI 브라우저 에이전트가 메인 화면 접속 여부를 확인하고 화면 캡처와 접속시간을 매일 기록합니다. 내부망에서 처리하며 외부 AI를 쓰지 않습니다.</p></div>
+      <div class="grid g4" style="margin-bottom:16px" id="svc-kpi"></div>
+      <div class="panel"><header><h2>점검 대상 4건</h2><span class="sub" id="svc-at">2027-03-15 09:00 자동 점검 · 30초 무응답은 접속 실패, 5초 초과는 지연</span><div class="act"><button class="btn pri sm" id="svc-run">다시 점검</button></div></header>
+        <div id="svc-prog"></div>
+        <div class="tw"><table><thead><tr><th>대상 · 유형</th><th>화면 캡처</th><th>상태코드</th><th>접속시간</th><th>판정</th><th>로컬 AI 판정 근거</th></tr></thead><tbody id="svc-body"></tbody></table></div></div>
+      <div class="trio">
+        <div class="panel"><b>측정은 코드가</b><p>접속 여부, 상태코드, 단계별 접속시간, SSL 잔여 유효기간은 브라우저가 잰 값을 그대로 기록합니다.</p></div>
+        <div class="panel"><b>판단은 로컬 AI가</b><p>캡처와 화면 문구로 정상·오류·빈 화면·점검 안내를 구분합니다. 내부 관리자 화면도 장비 안 로컬 LLM에서만 판정합니다.</p></div>
+        <div class="panel"><b>확인은 담당자가</b><p>정상이 아닌 항목(이상·지연·판정 불가)만 검토 대기함에 올라가고, 확인 이력이 점검 일지에 남습니다.</p></div>
+      </div>
+      <div class="foot">로그인 점검용 계정·점검 대상 URL·보고서 양식 세부는 착수 시 발주기관과 협의하여 확정합니다. 화면의 수치는 모두 샘플 데이터입니다.</div>
+    </section>
+
+    <!-- 2.1.3 VALIDITY -->
+    <section data-v="val" hidden>
+      <div class="vhead"><h1>유효성 점검</h1><span class="ref">[별표 2] 2.1.3</span><span class="badge b-acc">Beyond Flow 관리대장</span><p>인증서(SSL)·상용 SW 라이선스·도메인 유효기간과 NTP 동기화를 월 1회 점검하고, 만료 전 알림과 사전조치 이력을 남깁니다.</p></div>
+      <div class="panel" style="margin-bottom:16px"><header><h2>유효기간 관리대장</h2><span class="sub">기준일 2027-03-15 · 3월 월간 점검 3/2 완료</span><div class="act"><button class="btn pri sm" id="val-rep">3월 결과서 생성</button></div></header>
+        <div class="pb" style="padding-bottom:4px"><div class="chips" id="val-chips"></div></div>
+        <div class="tw"><table><thead><tr><th>구분</th><th>대상</th><th>만료일</th><th>남은 기간</th><th>상태</th><th>수집 방식</th><th>사전조치 이력</th></tr></thead><tbody id="val-body"></tbody></table></div></div>
+      <div class="grid g2">
+        <div class="panel"><header><h2>유효기간 질의</h2><span class="badge b-pilot">Flow · 근거 기반</span><span class="sub">날짜·건수는 관리대장, 절차는 지식 문서에서 찾습니다</span></header>
+          <div class="pb"><div class="chips" id="val-qs" style="margin-bottom:12px"></div><div class="qa" id="val-qa"><div class="empty" style="padding:12px">예시 질문을 누르면 근거와 함께 답합니다.</div></div></div></div>
+        <div class="panel"><header><h2>점검 결과서</h2><span class="sub">월 1회 · 결재 후 IRM 등록</span></header><div class="pb" id="val-out"><div class="empty">3월 결과서 생성을 누르면 관리대장 기준 결과서 초안이 만들어집니다.</div></div></div>
+      </div>
+      <div class="foot">영구 라이선스는 ‘해당없음’으로 기록하고, 도메인 만료일을 자동 조회할 수 없으면 관리대장 값을 씁니다. 화면의 수치는 모두 샘플 데이터입니다.</div>
+    </section>
+
+    <!-- JOURNAL -->
+    <section data-v="jrn" hidden>
+      <div class="vhead"><h1>점검 일지</h1><span class="ref">[별표 2] 2.1.1 · 2.1.2</span><p>점검 대상·항목·방법·결과와 운영자 확인 이력을 남깁니다. 확인한 일지는 월간 결과서와 IRM 등록용 요약에 반영됩니다.</p></div>
+      <div class="tabs" role="tablist" id="jrn-tabs">
+        <button class="tab" role="tab" aria-selected="true" data-j="sys">시스템 상태 점검 일지</button>
+        <button class="tab" role="tab" aria-selected="false" data-j="svc">서비스 점검 일지</button>
+      </div>
+      <div class="panel" id="jrn-box"></div>
+      <div class="foot">화면의 수치는 모두 샘플 데이터입니다.</div>
+    </section>
+
+    <!-- REVIEW QUEUE -->
+    <section data-v="rvq" hidden>
+      <div class="vhead"><h1>검토 대기함</h1><span class="ref">[별표 2] 2.1.2</span><p>서비스 점검에서 정상이 아닌 항목만 모아 운영자가 확인합니다. 정정한 판정은 오판 이력으로 모아 월 1회 판정 기준을 보완합니다.</p></div>
+      <div class="grid" style="grid-template-columns:minmax(0,.8fr) minmax(0,2fr)">
+        <div class="panel" style="align-self:start"><header><h2>오늘</h2><span class="sub" id="rq-sum"></span></header><ul class="rq" id="rq-list"></ul></div>
+        <div class="panel"><header><h2 id="rq-title">상세</h2><span class="sub" id="rq-sub"></span></header><div class="pb" id="rq-d"></div></div>
+      </div>
+      <div class="foot">화면의 수치는 모두 샘플 데이터입니다.</div>
+    </section>
+
+    <!-- OPS: SLA -->
+    <section data-v="ops-sla" hidden>
+      <div class="vhead"><h1>Beyond Ops · SLA 지표</h1><span class="badge b-good">자사 보유</span><span class="ref">[별표 2] 1.5.1</span><p>제안 서비스수준(SLA) 지표를 매월 측정해 달성 여부를 판정하고, 고시 필수 이행지표와 함께 월간보고에 반영합니다.</p></div>
+      <div class="grid g4" style="margin-bottom:16px" id="sla-kpi"></div>
+      <div class="panel" style="margin-bottom:16px"><header><h2>서비스 성과지표</h2><span class="sub" id="sla-sub"></span>
+        <div class="act"><label for="sla-m" class="sub">측정월</label><select id="sla-m"><option value="2" selected>2027-03</option><option value="1">2027-02 (기준선)</option><option value="0">2027-01 (기준선)</option></select></div></header>
+        <div class="tw"><table><thead><tr><th>구분</th><th>측정지표</th><th>측정 기준·주기</th><th>근거</th><th>목표</th><th class="num">실적</th><th>판정</th></tr></thead><tbody id="sla-body"></tbody></table></div>
+        <div class="pb" id="sla-alert"></div></div>
+      <div class="panel"><header><h2>고시 필수 이행지표</h2><span class="sub">고시가 정한 주기대로 이행했는지 봅니다 · 2027-03-01 ~ 03-15</span></header>
+        <div class="tw"><table><thead><tr><th>기준</th><th>지표</th><th>고시 주기</th><th>이번 달</th><th>판정</th><th>증적 (IRM 등록)</th></tr></thead><tbody id="law-body"></tbody></table></div></div>
+      <div class="foot">퍼센트 목표치는 1~2월 기준선 측정 후 발주기관과 협의하여 확정합니다. 미달 지표는 개선계획을 보고하며 SLA 미달 시 제재를 수용합니다. 화면의 수치는 모두 샘플 데이터입니다.</div>
+    </section>
+
+    <!-- OPS: SR -->
+    <section data-v="ops-sr" hidden>
+      <div class="vhead"><h1>Beyond Ops · SR 관리</h1><span class="badge b-good">자사 보유</span><p>서비스 요청(SR)을 접수부터 완료까지 기록하고, 처리기한 준수 여부를 SLA 적기 처리율에 자동 반영합니다.</p></div>
+      <div class="grid g4" style="margin-bottom:16px" id="sr-kpi"></div>
+      <div class="panel"><header><h2>서비스 요청</h2><div class="seg" id="sr-f"><button aria-pressed="true" data-f="all">전체</button><button aria-pressed="false" data-f="접수">접수</button><button aria-pressed="false" data-f="처리중">처리중</button><button aria-pressed="false" data-f="완료">완료</button></div>
+        <div class="act"><span class="sub" id="sr-avg"></span></div></header>
+        <div class="tw"><table><thead><tr><th>번호</th><th>요청 내용</th><th>유형</th><th>요청 부서</th><th>접수일</th><th>처리기한</th><th>상태</th><th>처리일수</th><th></th></tr></thead><tbody id="sr-body"></tbody></table></div>
+      </div>
+      <div class="foot">화면의 수치는 모두 샘플 데이터입니다.</div>
+    </section>
+
+    <!-- OPS: 정기점검 -->
+    <section data-v="ops-chk" hidden>
+      <div class="vhead"><h1>Beyond Ops · 정기점검</h1><span class="badge b-good">자사 보유</span><span class="ref">MPR-15</span><p>월 1회 방문 정기점검을 계획서 작성부터 지적사항 재점검까지 관리하고, 체크리스트로 결과보고서 초안을 만듭니다.</p></div>
+      <div class="stage5" id="chk-stage"></div>
+      <div class="grid g-main">
+        <div class="panel"><header><h2>3월 정기점검 체크리스트</h2><span class="sub" id="chk-p"></span></header><div class="pb"><div class="bar" style="margin-bottom:12px"><i id="chk-bar"></i></div><div id="chk-list"></div></div></div>
+        <div style="display:grid;gap:16px;align-content:start;min-width:0">
+          <div class="panel"><header><h2>점검 결과보고서</h2><div class="act"><button class="btn sm pri" id="chk-gen">결과서 생성</button></div></header><div class="pb" id="chk-out"><div class="empty">점검 항목을 확인한 뒤 결과서를 생성하세요.</div></div></div>
+          <div class="panel"><header><h2>수시 · 상시 점검</h2></header><div class="pb info">
+            <div><b>수시점검 <span class="ref">MPR-16</span></b><ul><li>현황 파악·일제 점검</li><li>특별점검 연 1회 이상 요구 시 무상 점검·조사·보고</li></ul></div>
+            <div><b>상시 점검</b><ul><li>유관기관 연계 정상처리 매일 점검</li><li>자원 사용률·서비스 상태 모니터링 (일상점검 연동)</li><li>로그·오류로그 이상 징후 분석</li></ul></div>
+            <div><b>연간 운영 계획 <span class="ref">QUR-04</span></b><ul><li>보안·성능 패치 영향도 분석 후 적용</li><li>월별 집중 모니터링 점검항목 선정</li></ul></div>
+          </div></div>
+        </div>
+      </div>
+      <div class="foot">H/W·N/W 인프라는 통합유지보수 사업과 협업하여 점검 결과를 공유합니다. 화면의 수치는 모두 샘플 데이터입니다.</div>
+    </section>
+
+    <!-- OPS: 콘텐츠 편성표 -->
+    <section data-v="ops-cal" hidden>
+      <div class="vhead"><h1>Beyond Ops · 콘텐츠 편성표</h1><span class="badge b-good">자사 보유</span><p>하나포털 웹 콘텐츠를 기획 → 제작 → 감수(D-7) → 게시 → 성과 순서로 편성하고 품질 점검을 기록합니다.</p></div>
+      <div class="grid g4" style="margin-bottom:16px" id="cc-kpi"></div>
+      <div class="grid g-main">
+        <div style="display:grid;gap:16px;min-width:0">
+          <div class="panel"><header><h2>2027년 3월 콘텐츠 편성표</h2><span class="sub">기획 → 제작 → 감수(D-7) → 게시 → 성과</span><div class="act"><button class="btn sm pri" id="cc-new">편성 등록</button></div></header>
+            <div class="pb" style="padding-bottom:10px"><div class="flt" id="cc-flt"></div></div>
+            <div class="cal-wrap"><div class="cal-g" id="cc-cal"></div></div></div>
+          <div class="panel"><header><h2>다가오는 일정</h2><span class="sub">오늘(3.15) 이후 · 발행일 기준</span></header><ul class="up" id="cc-up"></ul></div>
+        </div>
+        <div class="panel" style="align-self:start"><header><h2 id="cc-sh">편성 상세</h2></header><div class="pb" id="cc-side" aria-live="polite"></div></div>
+      </div>
+      <div class="foot">화면의 수치는 모두 샘플 데이터입니다.</div>
+    </section>
+
+    <!-- OPS: 월간 보고서 -->
+    <section data-v="ops-rep" hidden>
+      <div class="vhead"><h1>Beyond Ops · 월간 보고서</h1><span class="badge b-good">자사 보유</span><span class="ref">PMR-15</span><p>SLA·일상점검·SR·정기점검·장애·고객지원 현황을 모듈 기록에서 모아 월간 운영보고서 초안을 만듭니다.</p></div>
+      <div class="panel"><header><h2>월간 운영보고서 초안</h2><span class="sub">2027년 3월 · 모듈 기록 자동 집계</span><div class="act"><button class="btn pri" id="rep-gen">초안 생성</button></div></header>
+        <div class="pb" id="rep-out"><div class="empty">초안 생성을 누르면 현재 화면의 샘플 데이터로 보고서 초안이 만들어집니다.</div></div></div>
+      <div class="foot">수치는 각 모듈 기록에서 자동 집계한 초안이며 PM 검토 후 확정합니다. 화면의 수치는 모두 샘플 데이터입니다.</div>
+    </section>
+
+    <!-- CALL -->
+    <section data-v="call" hidden>
+      <div class="vhead"><h1>Beyond Call</h1><span class="badge b-good">자사 보유</span><p>전화·게시판·공문 문의를 한 창구로 접수하고, Flow 지식으로 답변을 추천받아 상담일지와 통계를 자동으로 남깁니다.</p></div>
+      <div class="grid g-main">
+        <div class="panel"><header><h2>통합 접수</h2><div class="seg" id="call-f"><button aria-pressed="true" data-f="all">전체</button><button aria-pressed="false" data-f="전화">전화</button><button aria-pressed="false" data-f="게시판">게시판</button><button aria-pressed="false" data-f="공문">공문</button></div></header>
+          <div class="queue" id="call-q"></div></div>
+        <div class="panel"><header><h2>상담 상세</h2><span class="sub" id="call-id"></span></header><div class="pb" id="call-d"></div></div>
+      </div>
+      <div class="grid g2" style="margin-top:16px">
+        <div class="panel"><header><h2>콜백 대기</h2><span class="sub" id="cb-n"></span></header><div id="cb-list"></div></div>
+        <div class="panel"><header><h2>오늘 민원 유형</h2><span class="sub" id="log-n"></span></header><div class="pb bars" id="call-stat"></div></div>
+      </div>
+      <div class="foot">화면의 수치는 모두 샘플 데이터입니다.</div>
+    </section>
+
+    <!-- SENTINEL -->
+    <section data-v="sentinel" hidden>
+      <div class="vhead"><h1>Beyond Sentinel</h1><span class="badge b-good">자사 보유</span><span class="ref">고시 2.1.1 · MPR-02</span><p>서버 자원·서비스·연계 배치를 24시간 감시해 시스템 상태 점검을 매일 자동 수행하고, 장애가 나면 당번 순서대로 전파하고 장애보고서 초안을 만듭니다.</p></div>
+      <div class="panel" style="margin-bottom:16px"><header><h2>감시 대상</h2><span class="sub" id="sn-upd">3초마다 갱신</span>
+        <div class="act"><button class="btn sm" data-go="sys">일일 상태 점검 보기</button><button class="btn" id="sn-sim">장애 시뮬레이션</button><button class="btn pri" id="sn-fix" disabled>복구 처리</button></div></header>
+        <div class="pb"><div class="tiles" id="sn-tiles"></div></div></div>
+      <div class="grid g3">
+        <div class="panel"><header><h2>전파 이력</h2></header><div class="pb" id="sn-tl"><div class="empty">현재 진행 중인 장애가 없습니다.</div></div></div>
+        <div class="panel"><header><h2>원인 분석</h2><span class="sub">Flow 유사 장애 조회</span></header><div class="pb" id="sn-ai"><div class="empty">장애가 감지되면 유사 이력과 점검 순서를 제시합니다.</div></div></div>
+        <div class="panel"><header><h2>장애보고서 초안</h2></header><div class="pb" id="sn-rep"><div class="empty">복구 처리 후 자동으로 작성됩니다.</div></div></div>
+      </div>
+      <div class="foot">화면의 수치는 모두 샘플 데이터입니다.</div>
+    </section>
+
+    <!-- ETL -->
+    <section data-v="etl" hidden>
+      <div class="vhead"><h1>Beyond ETL</h1><span class="badge b-good">자사 보유 · BT-ETL</span><span class="ref">MPR-08 · MPR-10</span><p>유관기관 연계 데이터 수신 현황을 점검하고, 수신 지연·건수 급감·스키마 변경을 감지해 재수집합니다.</p></div>
+      <div class="grid g-main">
+        <div class="panel"><header><h2>연계기관 수신 현황</h2><span class="sub">2027-03-15 06:00 기준 (샘플)</span></header>
+          <div class="tw"><table><thead><tr><th>연계기관</th><th>데이터</th><th>주기</th><th>최종 수신</th><th class="num">건수</th><th>전일 대비</th><th>상태</th></tr></thead><tbody id="etl-body"></tbody></table></div></div>
+        <div class="panel"><header><h2 id="etl-dt">상세</h2><div class="act"><button class="btn pri sm" id="etl-re" disabled>재수집 실행</button></div></header><div class="pb" id="etl-d"></div></div>
+      </div>
+      <div class="foot">화면의 수치는 모두 샘플 데이터입니다.</div>
+    </section>
+  </main>
+</div>
+<dialog id="dlg"><header><h2 id="dlg-t" style="font-size:14.5px;margin:0"></h2><button class="btn sm" style="margin-left:auto" onclick="document.getElementById('dlg').close()">닫기</button></header><div class="db" id="dlg-b"></div></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let tt; function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),2200)}
+const now=()=>{const d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')};
+const pct=(a,b)=>b?Math.round(a/b*1000)/10:0;
+
+/* ================= sample state ================= */
+const S={
+  incidents:[], feed:[
+    ['09:05','Ops','서비스 점검 4종 완료 · 정상이 아닌 3건 검토 대기함 등록'],
+    ['09:00','Sentinel','오늘 서비스 점검 스케줄 실행 (로컬 AI 화면 판정)'],
+    ['06:00','ETL','보건복지부 수혜현황 연계 수신 지연 감지 · 담당자 알림'],
+    ['05:30','Sentinel','시스템 상태 점검 일지 운영자 확인 (WEB·WAS·DB 정상)'],
+    ['03-14','Flow','유효기간: 리포팅 솔루션 라이선스 만료 D-7 알림 발송'],
+    ['03-12','TDS','TB_STLM_PAY 표준 위반 컬럼 2건 검출'],
+  ],
+  sr:[
+    {id:'SR-0311',t:'지자체 사용자 자료 다운로드 항목 조정(최소 필수데이터)',ty:'기능개선',dep:'발주기관',d:'03-04',lim:5,st:'완료',days:2},
+    {id:'SR-0312',t:'통계메뉴 거주지별 현황 출력값 대조 오류 수정',ty:'오류수정',dep:'발주기관',d:'03-06',lim:3,st:'완료',days:1},
+    {id:'SR-0313',t:'하나포털 메인 정책 안내 배너 교체',ty:'콘텐츠',dep:'포털 담당',d:'03-08',lim:5,st:'처리중',days:3},
+    {id:'SR-0314',t:'남북하나재단 계정 접속기록 조회 조건 추가',ty:'기능개선',dep:'남북하나재단',d:'03-10',lim:7,st:'처리중',days:2},
+    {id:'SR-0315',t:'정착금 지급 내역 일괄 업로드 양식 컬럼 추가',ty:'기능개선',dep:'발주기관',d:'03-12',lim:7,st:'접수',days:0},
+    {id:'SR-0316',t:'국회 요구자료 통계 추출 지원',ty:'자료추출',dep:'발주기관',d:'03-13',lim:2,st:'접수',days:0},
+    {id:'SR-0317',t:'지자체 담당자 계정 권한 변경 지연 건 확인',ty:'계정·권한',dep:'지자체',d:'03-14',lim:1,st:'처리중',days:1},
+  ],
+  checks:[
+    ['하드웨어','장비 가동 상태·알람 확인 (통합유지보수 결과 공유)',true],
+    ['하드웨어','CPU 평균·최고 사용률, 메모리 점유율 추이',true],
+    ['하드웨어','백업 장비·백업 공간 사용률',false],
+    ['소프트웨어','OS 서비스 상태·보안 패치 적용 현황',true],
+    ['소프트웨어','시스템·응용·보안 로그 오류 확인',true],
+    ['소프트웨어','불필요 포트·방화벽 정책 점검',false],
+    ['응용·연계','응용 오류 로그 분석·조치',true],
+    ['응용·연계','소스 변경·배포 이력과 형상 대조',false],
+    ['응용·연계','연계 송수신 정상처리·오류 조치 확인',true],
+    ['상용 S/W','상용 S/W 버전·패치 확인',false],
+    ['상용 S/W','기술지원·장애 이력 확인',false],
+  ],
+  calls:[
+    {id:'C-2031',ch:'전화',tm:'09:12',who:'지자체 담당자',t:'거주지 전입 대상자 조회가 되지 않습니다',type:'거주지 정보',urg:'보통',st:'대기',
+     raw:'거주지 전입 처리된 대상자가 하나넷 거주지 정보 화면에서 조회되지 않는다는 지자체 담당자 문의. 대상자 식별번호 확인 요청.',
+     sum:'거주지 전입 처리 대상자 조회 불가. 전입 정보 반영 시점과 권한 범위 확인 필요.',
+     ans:'거주지 전입 정보는 주민등록망 연계(일 1회) 반영 후 조회됩니다. 전입 처리일 다음 날 이후에도 조회되지 않으면 담당 지자체 권한 범위를 확인한 뒤 회신드리겠습니다.',
+     src:[['운영 매뉴얼','4.2 주민등록망 연계 배치'],['상담 이력','2027-02 유사 문의 6건']]},
+    {id:'C-2032',ch:'게시판',tm:'09:20',who:'하나센터',t:'통계 화면에 지난달 수혜현황이 비어 있음',type:'통계',urg:'높음',st:'대기',
+     raw:'통계 메뉴에서 2월 기초생활 수혜현황이 0으로 표시됩니다. 확인 부탁드립니다.',
+     sum:'2월 수혜현황 0건 표시. 연계 수신 지연 여부 확인 필요.',
+     ans:'현재 보건복지부 수혜현황 연계(월 1회) 수신이 지연되어 2월 통계가 반영되지 않은 상태입니다. 재수집이 끝나는 대로 통계가 갱신되며, 갱신 완료 시 게시판 답변으로 다시 알려드리겠습니다.',
+     src:[['ETL 수신 현황','보건복지부 수혜현황 지연'],['장애 이력','2026-11 통계 누락 조치']]},
+    {id:'C-2033',ch:'전화',tm:'09:35',who:'하나포털 이용자',t:'증명서 발급 중 본인인증이 실패합니다',type:'본인인증',urg:'보통',st:'대기',
+     raw:'하나포털에서 증명서 발급을 신청하는데 본인인증 단계에서 계속 실패한다는 문의.',
+     sum:'증명서 발급 시 본인인증 반복 실패. 인증 수단·브라우저 환경 확인 필요.',
+     ans:'본인인증은 휴대폰·인증서 방식으로 진행되며, 일부 브라우저 설정에서 팝업이 차단되면 실패할 수 있습니다. 팝업 허용 후 다시 시도해 주시고, 계속 실패하면 인증 수단과 오류 문구를 알려주시면 확인하겠습니다.',
+     src:[['이용자 매뉴얼','증명서 발급 절차'],['FAQ','본인인증 오류']]},
+    {id:'C-2034',ch:'공문',tm:'10:02',who:'유관기관',t:'연계 데이터 제공 항목 협의 요청',type:'연계',urg:'높음',st:'대기',
+     raw:'연계 시스템 개편에 따라 제공 항목 변경 여부를 확인하고, 변경 일정 협의를 요청함.',
+     sum:'유관기관 시스템 개편에 따른 연계 항목 변경 협의 요청(공문).',
+     ans:'연계 항목 변경은 발주기관 검토가 필요한 사항으로, 영향도 분석 후 시범연계 일정을 포함한 협의 일정을 회신 공문으로 안내드리겠습니다.',
+     src:[['연계 방식 정의서','기관별 연계 항목']]},
+    {id:'C-2035',ch:'게시판',tm:'10:18',who:'하나포털 이용자',t:'챗봇 화면에 점검 안내만 보입니다',type:'포털 이용',urg:'보통',st:'대기',
+     raw:'아침에 하나포털 챗봇을 열었더니 서비스 점검 중이라는 안내만 나옵니다.',
+     sum:'챗봇 점검 안내 화면 표시 문의. 계획 점검 여부 확인 필요.',
+     ans:'오늘 오전 챗봇 지식베이스 정기 갱신으로 점검 안내가 표시되었습니다. 점검이 끝난 뒤 정상 이용이 가능하며, 서비스 점검 일지에 확인 이력을 남겼습니다.',
+     src:[['서비스 점검 일지','2027-03-15 챗봇 점검 안내'],['FAQ','챗봇 이용 시간']]},
+  ],
+  callbacks:[{id:'CB-118',who:'지자체 담당자',t:'계정 권한 처리 결과 안내',due:'11:00'},{id:'CB-119',who:'하나센터',t:'통계 자료 재발송 확인',due:'14:00'}],
+  stats:{'거주지 정보':6,'통계':4,'본인인증':5,'연계':2,'포털 이용':3,'기타':2},
+  logs:21,
+  etl:[
+    {n:'행정안전부 · 주민등록망',k:'행정안전부',data:'주민등록 정보',cyc:'일 1회',last:'05:42',c:18423,dd:+0.4,st:'정상',hist:[18,18,18,18,18,18,18]},
+    {n:'고용노동부 · 직업훈련',k:'고용노동부',data:'직업훈련내역',cyc:'일 1회',last:'05:50',c:1529,dd:-1.4,st:'정상',hist:[15,15,16,15,15,16,15]},
+    {n:'고용노동부 · 고용보험',k:'고용노동부',data:'고용보험',cyc:'일 1회',last:'05:31',c:9611,dd:+0.8,st:'정상',hist:[9,9,10,9,9,10,10]},
+    {n:'보건복지부 · 수혜현황',k:'보건복지부',data:'기초생활·차상위 수혜현황',cyc:'월 1회',last:'02-05 03:10',c:0,dd:-100,st:'지연',hist:[0,0,0,0,0,0,0]},
+    {n:'교육부 · 유치원입학',k:'교육부',data:'유치원입학관리',cyc:'상시',last:'09:40',c:154,dd:+3.3,st:'스키마 변경',hist:[14,15,16,14,15,15,15]},
+    {n:'보건복지부 · 사각지대',k:'보건복지부',data:'사각지대발굴',cyc:'3개월 1회',last:'01-10 04:10',c:2845,dd:+0.0,st:'정상',hist:[28,0,0,0,0,0,0]},
+    {n:'통일부 · 통합사례이력',k:'통일부',data:'통합사례이력',cyc:'일 1회',last:'05:58',c:4021,dd:-0.6,st:'정상',hist:[39,40,41,39,40,40,40]},
+    {n:'남북하나재단 · 취업관리',k:'남북하나재단',data:'취업관리',cyc:'일 1회',last:'05:36',c:5502,dd:+1.9,st:'정상',hist:[51,52,54,50,53,54,55]},
+  ],
+};
+
+/* ---------- daily-check data ---------- */
+const TODAY=15, FIRST=1 /* 2027-03-01 = 월요일 */, DAYS=31;
+const SV=[
+ {n:'WEB-01',r:'WEB',cpu:31,mem:48,disks:[['/',41],['/data',63]],proc:'웹 서버 동작',up:'42일 6시간',ntp:12,h:[28,30,27,33,31,29,31],src:'수집 모듈',mx:34,av:29},
+ {n:'WAS-01',r:'WAS',cpu:44,mem:71,disks:[['/',38],['/app',57]],proc:'WAS 프로세스 동작',up:'42일 6시간',ntp:9,h:[41,46,43,52,47,45,44],src:'수집 모듈',mx:52,av:45},
+ {n:'DB-01',r:'DBMS',cpu:22,mem:66,disks:[['/',35],['/dbdata',78]],proc:'DBMS 인스턴스 동작',up:'118일 2시간',ntp:21,h:[20,23,21,25,22,24,22],src:'수집 모듈',mx:26,av:22},
+];
+const TG=[
+ {id:'T1',n:'하나포털 메인',ty:'대외 오픈 페이지',how:'URL 자동 점검',url:'https://hanaportal.example/',kind:'portal',code:200,t:[0.18,0.64,1.12],ssl:'D-16',res:'정상',ai:'정상',why:'상단 메뉴, 정책 안내 배너, 공지 목록이 모두 표시됨'},
+ {id:'T2',n:'하나넷 업무 메인',ty:'로그인 필요 페이지',how:'시나리오 합성 점검 · 점검 전용 계정',url:'https://hananet.example/main',kind:'net',code:200,t:[4.81,6.92,8.34],ssl:'D-188',res:'지연',ai:'정상',why:'로그인 후 좌측 메뉴와 대상자 조회 화면, 핵심 문구 “통합 검색” 표시됨',meas:'접속시간 8.34초 · 지연 기준 5초 초과',prev:'net'},
+ {id:'T3',n:'하나넷 관리자',ty:'내부 관리자 화면',how:'내부망 직접 점검 · 로컬 LLM 판정',url:'http://10.0.0.21/admin',kind:'err',code:500,t:[0.10,0.13,0.15],ssl:'-',res:'오류 화면',ai:'오류 화면',why:'‘500 Internal Server Error’ 문구만 표시되고 메뉴가 없음',meas:'상태코드 500 응답',prev:'adm'},
+ {id:'T4',n:'하나포털 챗봇',ty:'대외 오픈 페이지',how:'URL 자동 점검',url:'https://hanaportal.example/chatbot',kind:'maint',code:200,t:[0.16,0.41,0.52],ssl:'D-16',res:'점검 안내',ai:'점검 안내',why:'‘서비스 점검 중입니다’ 안내문이 화면 중앙에 표시됨',prev:'chat'},
+];
+const RQ={sel:'T2',items:{T2:null,T3:null,T4:null}};   // null = 미확인, else {dec,memo,act,tm}
+const RQ_OPTS={T2:['판정 유지 (지연)','정상으로 정정 (일시 지연)','이상으로 확정 (장애 등록)'],T3:['판정 유지 (오류 화면)','정상으로 정정 (계획된 점검)','이상으로 확정 (장애 등록)'],T4:['판정 유지 (점검 안내)','정상으로 정정 (계획된 점검)','이상으로 확정 (장애 등록)']};
+const RQ_DEF={T2:[1,'09:00 배치 집중 시간대 일시 지연, 재측정 1.4초','09:20 재측정 정상 확인'],T3:[2,'WAS 관리자 컨텍스트 배포 오류','관리자 컨텍스트 재배포 후 정상 응답 확인 (장애 등록 INC-0315-01)'],T4:[1,'챗봇 지식베이스 정기 갱신 (계획 점검)','점검 공지 게시 확인']};
+const rqLeft=()=>Object.values(RQ.items).filter(v=>!v).length;
+const svcConfirmed=()=>rqLeft()===0;
+let svcConfirmTm=null;
+
+const VAL=[
+ {g:'SW 라이선스',n:'리포팅 솔루션(샘플)',s:'수량 1',exp:'2027-03-22',d:7,how:'라이선스 대장',hist:['구매 요청 결재 중','만료 전 알림 3/8 발송']},
+ {g:'인증서(SSL)',n:'하나포털 웹서버',s:'공공기관 인증기관(샘플)',exp:'2027-03-31',d:16,how:'TLS 자동 조회',hist:['갱신 신청 완료 (3/10)','만료 전 알림 3/1 발송']},
+ {g:'도메인',n:'하나포털 대표 도메인',s:'도메인 등록기관(샘플)',exp:'2027-04-11',d:27,how:'관리대장',hist:['담당자 알림 발송 (3/12)']},
+ {g:'SW 라이선스',n:'DB 암호화 솔루션(샘플)',s:'수량 2',exp:'2027-05-23',d:69,how:'라이선스 대장',hist:[]},
+ {g:'인증서(SSL)',n:'하나넷 웹서버',s:'공공기관 인증기관(샘플)',exp:'2027-09-19',d:188,how:'TLS 자동 조회',hist:[]},
+ {g:'도메인',n:'하나넷 대표 도메인',s:'도메인 등록기관(샘플)',exp:'2027-12-05',d:265,how:'관리대장',hist:[]},
+ {g:'SW 라이선스',n:'문서위변조 방지(샘플)',s:'영구',exp:null,d:null,how:'라이선스 대장',hist:['영구 라이선스 (해당없음)']},
+ {g:'NTP',n:'WEB·WAS·DB 3대',s:'최대 시간차 21ms',exp:null,d:null,how:'Sentinel 수집 모듈',hist:['기준 1초 이내 · 정상']},
+];
+const vSt=v=>v.d===null?'해당없음':v.d<0?'만료':v.d<=30?'30일 이내':v.d<=90?'90일 이내':'정상';
+const VQ=[
+ ['만료 30일 이내 인증서와 도메인은?',`30일 이내 만료 대상은 2건입니다.<br>· 인증서(SSL) 하나포털 웹서버 — 2027-03-31 (D-16), 갱신 신청 완료(3/10)<br>· 도메인 하나포털 대표 도메인 — 2027-04-11 (D-27), 담당자 알림 발송(3/12)<div style="margin-top:6px"><span class="src">근거 · 유효기간 관리대장 — 2027-03-15 기준</span></div>`],
+ ['인증서 갱신은 어떤 순서로 하나요?',`① 만료 30일 전 갱신 신청(인증기관) → ② 발급 인증서 검증(체인·도메인 일치) → ③ 운영 반영 전 영향도 확인·작업계획 승인 → ④ 웹서버 적용·재기동 → ⑤ 서비스 점검(2.1.2)으로 정상 확인 → ⑥ 관리대장 만료일 갱신<div style="margin-top:6px"><span class="src">근거 · 운영매뉴얼 6.3 인증서 교체 절차</span><span class="src">근거 · 장애 이력 2026-06 인증서 만료</span></div>`],
+ ['이번 달 사전조치가 필요한 항목은?',`3건입니다. 리포팅 솔루션 라이선스(D-7)는 구매 요청 결재 중이며, 만료일 전에 결재가 끝나지 않으면 발주기관 담당자에게 즉시 보고합니다. 하나포털 인증서(D-16)·도메인(D-27)은 갱신 진행 중입니다.<div style="margin-top:6px"><span class="src">근거 · 유효기간 관리대장</span><span class="src">근거 · 만료 전 알림 이력</span></div>`],
+];
+const VS={f:'all',q:null};
+
+/* ================= SLA ================= */
+function srDone(){return S.sr.filter(x=>x.st==='완료')}
+function srAvg(){const d=srDone();return d.length?d.reduce((a,b)=>a+b.days,0)/d.length:0}
+function srOnTime(){const d=srDone();const ok=d.filter(x=>x.days<=x.lim).length;return pct(39+ok,40+d.length)} /* 최근 3개월 누적: 이전 40건 중 39건 기한 내 (샘플) */
+function avail(){const m=S.incidents.reduce((a,b)=>a+b.min,0);return +(99.97-m/43200*100).toFixed(2)}
+function slaRows(m){
+  const inc=S.incidents, base=m<2;
+  const fix=inc.length?pct(inc.filter(i=>i.min<=480).length,inc.length):null;
+  const ap=svcConfirmed();
+  return [
+   ['유지보수','응용 S/W 가동률','월 가동시간 ÷ 계획 운영시간','QUR-01','99.5% 이상',base?[99.92,99.95][m]+'%':avail()+'%',base?'b':(avail()>=99.5?'ok':'no')],
+   ['','기준시간 내 장애 보수율','8시간 내 보수 건 ÷ 장애 건','MPR-02','100%',base?['100% (1/1)','100% (2/2)'][m]:(fix===null?'장애 없음':fix+'%'),base?'b':(fix===null?'na':fix>=100?'ok':'no')],
+   ['운영','연계 정상처리 일일 점검 이행','매일 점검 · 월간 점검보고서 반영','MPR-10','100%',base?['31/31일','28/28일'][m]:'15/15일 (100%)',base?'b':'ok'],
+   ['','안정성 고시 A4 AP 필수 9개 이행','일상점검 일·월 1회, 백업 반기, 훈련 연 1회','고시 별표2','100%',base?['9/9','9/9'][m]:(ap?'9/9 이행':'8/9 · 오늘 서비스 점검 확인 대기'),base?'b':(ap?'ok':'wip')],
+   ['','통계 정합성 지적사항 조치','월간 점검 지적 건 대비 조치 건','MPR-06','100%',base?['3/3','1/1'][m]:'2/2 (100%)',base?'b':'ok'],
+   ['관리','서비스 요청 적기 처리율','요청별 처리기한 내 완료 비율','제안사 관리','95% 이상',base?['96.8%','97.1%'][m]:srOnTime()+'%',base?'b':(srOnTime()>=95?'ok':'no')],
+   ['','보고 일정 준수율','주·월간보고 기한 내 제출','PMR-15','100%',base?['5/5','5/5'][m]:'3/3 (주간 2, 월간 1)',base?'b':'ok'],
+   ['협업','서버·네트워크·주변장치 가동률','통합유지보수 사업 관리 · 장애 시 공동 조치','-','공동 관리','99.99%','ref'],
+  ];
+}
+const JP={ok:'<span class="pill p-ok">달성</span>',no:'<span class="pill p-crit">미달</span>',na:'<span class="pill p-mute">장애 없음</span>',wip:'<span class="pill p-warn">진행 중</span>',b:'<span class="pill p-mute">기준선 측정</span>',ref:'<span class="pill p-mute">참고</span>'};
+
+/* ================= navigation ================= */
+const render={};
+function show(v){
+  if(!$(`[data-v="${v}"]`))v='home';
+  $$('[data-v]').forEach(s=>s.hidden=s.dataset.v!==v);
+  $$('.nav[data-view]').forEach(n=>{if(n.classList.contains('parent'))return;n.setAttribute('aria-current',n.dataset.view===v)});
+  const op=v.startsWith('ops-');const p=$('.nav.parent');p.setAttribute('aria-current',op);p.dataset.open=op;
+  render[v]&&render[v]();
+  try{history.replaceState(null,'','#'+v)}catch(e){}
+  try{localStorage.setItem('bas2-view',v)}catch(e){}
+  window.scrollTo({top:0});
+}
+$$('.nav[data-view]').forEach(n=>n.addEventListener('click',()=>show(n.dataset.view)));
+document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g)show(g.dataset.go)});
+function addFeed(mod,txt){S.feed.unshift([now(),mod,txt]);if(S.feed.length>8)S.feed.pop()}
+function rqBadge(){const n=rqLeft(),c=$('#rq-cnt');c.textContent=n?n:'✓';c.dataset.z=n?0:1}
+
+/* ================= screenshot mock ================= */
+function shot(kind,url,lat){
+  let c='';
+  if(kind==='portal')c=`<div class="s-hd"><span class="s-logo"></span><span class="s-nav"><i></i><i></i><i></i><i></i></span></div><div class="s-hero"><i></i><i></i></div><div class="s-tiles"><i></i><i></i><i></i></div><div class="s-list"><i></i><i></i><i></i></div>`;
+  else if(kind==='net'||kind==='adm')c=`<div class="s-app ${kind==='adm'?'adm':''}"><div class="tb"><i></i><i></i></div><div class="lm"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="ct"><span class="ti"></span><div class="fl"><i></i><i></i><i></i></div><span class="tr h"></span><span class="tr"></span><span class="tr"></span><span class="tr"></span><span class="tr"></span><span class="tr"></span></div></div>`;
+  else if(kind==='err')c=`<div class="s-err"><h5>500 Internal Server Error</h5><hr><p>The server encountered an internal error and was unable to complete your request.</p></div>`;
+  else if(kind==='maint')c=`<div class="s-mt"><span class="ic">!</span><b>서비스 점검 중입니다</b><span>보다 나은 서비스를 위해 점검을 진행하고 있습니다</span></div>`;
+  else if(kind==='chat')c=`<div class="s-chat"><div class="ch"><i></i></div><div class="bd"><span class="bb"></span><span class="bb me"></span><span class="bb"></span><span class="bb me"></span></div><div class="in"></div></div>`;
+  return `<div class="shot"><div class="sb"><i></i><i></i><i></i><span>${esc(url)}</span></div><div class="sc">${c}</div>${lat?`<span class="lat">${lat}</span>`:''}</div>`;
+}
+function zoom(id){const t=TG.find(x=>x.id===id);$('#dlg-t').textContent=t.n+' · 2027-03-15 09:00 캡처';
+  $('#dlg-b').innerHTML=`<div class="shot-lg">${shot(t.kind,t.url,t.res==='지연'?t.t[2].toFixed(2)+'s':'')}</div><p style="margin:12px 0 0;font-size:13px"><b>로컬 AI 판정: ${t.ai}</b> — ${esc(t.why)}</p>`;$('#dlg').showModal()}
+document.addEventListener('click',e=>{const z=e.target.closest('[data-zoom]');if(z)zoom(z.dataset.zoom)});
+
+/* ================= home ================= */
+const MODS=[
+ {k:'OP',id:'ops-sla',n:'Ops',tag:'운영 점검',code:'MPR-15 · PMR-15 · 고시 2.1.2',d:'로컬 AI 사이트 화면 점검, SLA·SR·정기점검 관리, 월간보고',stats:()=>[['오늘 화면 점검',TG.length+'건'],['처리 중 SR',S.sr.filter(x=>x.st!=='완료').length+'건']]},
+ {k:'SN',id:'sentinel',n:'Sentinel',tag:'자원 감시',code:'MPR-02 · 고시 2.1.1',d:'WEB·WAS·DBMS·서버 자원·연계 배치 감시, 당번 자동 전파',stats:()=>[['감시 대상',TARGETS.length+'개'],['진행 중 장애',(SN.active?1:0)+'건']]},
+ {k:'FL',id:'flow',n:'Flow',tag:'운영 지식',code:'MHR-03 · MPR-11 · 고시 2.1.3',d:'인수 지식·장애·법제도 반영 이력 축적, 유효기간 관리대장',ext:'http://210.126.31.185:63080/',stats:()=>[['지식 문서','214건'],['만료 30일 이내',VAL.filter(v=>vSt(v)==='30일 이내').length+'건']]},
+ {k:'ET',id:'etl',n:'ETL',tag:'연계 데이터',code:'MPR-08 · MPR-10',d:'연계 수신 현황 점검, 지연·건수 급감·스키마 변경 감지 후 재수집',stats:()=>[['정상 수신',S.etl.filter(e=>e.st==='정상').length+'/'+S.etl.length],['확인 필요',S.etl.filter(e=>e.st!=='정상').length+'건']]},
+ {k:'TD',id:'tds',n:'TDS',tag:'DB 품질',code:'PMR-20 · COR-04',d:'표준 사전 기반 테이블 설계, 표준 준수 검수, 산출물 발행',ext:'http://210.126.31.181:5555/login?next=%2F',stats:()=>[['표준 단어','1,286개'],['표준 준수율','91.4%']]},
+ {k:'CL',id:'call',n:'Call',tag:'문의 접수',code:'사용자 지원',d:'전화·게시판·공문 통합 접수, 답변 추천, 상담일지·통계',stats:()=>[['대기 문의',S.calls.filter(c=>c.st==='대기').length+'건'],['콜백 대기',S.callbacks.length+'건']]},
+];
+render.home=()=>{
+  $('#k-avail').textContent=avail().toFixed(2)+'%';
+  $('#k-daily').textContent=(svcConfirmed()?15:14)+'/15일';
+  $('#k-daily-s').textContent='고시 2.1.1~2.1.3 · '+(rqLeft()?'검토 대기 '+rqLeft()+'건':'오늘 확인 완료');
+  $('#k-sr').textContent=S.sr.filter(x=>x.st!=='완료').length+'건';
+  $('#k-sr-s').textContent='평균 처리 '+srAvg().toFixed(1)+'일 · Ops';
+  $('#k-etl').textContent=S.etl.filter(e=>e.st==='정상').length+'/'+S.etl.length;
+  $('#mods').innerHTML=MODS.map(m=>`<article class="panel mod">
+    <div class="t"><span class="k">${m.k}</span><div><h3>Beyond ${m.n}</h3><div style="font-size:12px;color:var(--muted)">${m.tag}</div></div><span class="badge b-good" style="margin-left:auto">자사 보유</span></div>
+    <div class="d">${m.d}<div class="ref" style="font-weight:500;margin-top:4px">${m.code}</div></div>
+    <div class="stats">${m.stats().map(s=>`<div>${s[0]}<b>${s[1]}</b></div>`).join('')}</div>
+    <div class="go">${m.ext?`<span style="font-size:12px;color:var(--muted)">실제 시스템</span><a class="btn sm" href="${m.ext}" target="_blank" rel="noopener">새 탭에서 열기 ↗</a>`:`<span></span><button class="btn sm" data-go="${m.id}">열기</button>`}</div></article>`).join('');
+  const cls={Ops:'b-acc',Call:'b-acc',Sentinel:'b-crit',ETL:'b-good',Flow:'b-pilot',TDS:'b-good'};
+  $('#feed').innerHTML=S.feed.map(f=>`<li><span class="tm mono">${f[0]}</span><span class="who"><span class="badge ${cls[f[1]]||'b-muted'}">${f[1]}</span></span><span>${esc(f[2])}</span></li>`).join('');
+};
+
+/* ================= daily dashboard ================= */
+render.daily=()=>{
+  const left=rqLeft();
+  $('#dc-alert').innerHTML=left?`<div class="alert crit" style="align-items:center"><span><b>오늘 확인이 끝나지 않은 점검 1건</b> · 서비스 점검 (검토 대기 ${left}건). 18:00까지 운영자 확인이 없으면 미이행으로 기록됩니다.</span><span style="margin-left:auto"><button class="btn sm" data-go="rvq">검토 대기함 열기</button></span></div>`
+   :`<div class="alert ok" style="align-items:center"><span><b>오늘 일상점검 확인 완료</b> · 시스템 상태 점검 05:30, 서비스 점검 ${svcConfirmTm||now()} 운영자 확인. 일지와 IRM 등록용 요약에 반영되었습니다.</span><span style="margin-left:auto"><button class="btn sm" data-go="jrn">점검 일지 열기</button></span></div>`;
+  const vc=k=>VAL.filter(v=>vSt(v)===k).length;
+  const svcPills=svcConfirmed()?`<span class="pill p-ok mk">정상 1</span><span class="pill p-acc">확인 완료 3</span>`:`<span class="pill p-ok mk">정상 1</span><span class="pill p-warn mk tri">지연 1</span><span class="pill p-crit mk sq">이상 2</span>`;
+  $('#dc-cards').innerHTML=`
+   <button class="dcard" data-go="sys"><span class="h"><b>[별표 2] 2.1.1</b>시스템 상태 점검 · 일 1회</span><span class="t">WEB·WAS·DBMS 3대</span><span class="pp"><span class="pill p-ok mk">정상 3</span></span><span class="f"><span>Beyond Sentinel · 5분 수집</span><span>확인 05:30</span></span></button>
+   <button class="dcard" data-go="svc"><span class="h"><b>[별표 2] 2.1.2</b>서비스 점검 · 일 1회</span><span class="t">메인화면 접속·응답시간</span><span class="pp">${svcPills}</span><span class="f"><span>Beyond Ops · 로컬 AI 화면 판정</span><span>${svcConfirmed()?'확인 '+svcConfirmTm:'검토 '+left+'건 남음'}</span></span></button>
+   <button class="dcard" data-go="val"><span class="h"><b>[별표 2] 2.1.3</b>유효성 점검 · 월 1회</span><span class="t">인증서·도메인·라이선스·NTP</span><span class="pp"><span class="pill p-crit mk sq">30일 이내 ${vc('30일 이내')}</span><span class="pill p-warn mk tri">90일 이내 ${vc('90일 이내')}</span><span class="pill p-ok mk">정상 ${vc('정상')}</span></span><span class="f"><span>Beyond Flow · 3/2 월간 점검 완료</span><span>만료 전 알림 3건 발송</span></span></button>`;
+  let h=['일','월','화','수','목','금','토'].map((w,i)=>`<div class="wd ${i===0?'sun':''}">${w}</div>`).join('');
+  for(let i=0;i<FIRST;i++)h+='<div class="dd blank"></div>';
+  for(let d=1;d<=DAYS;d++){
+    let m='';
+    if(d<TODAY)m=`<i class="ok" title="상태 점검 확인 완료"></i><i class="${d===6?'lt':'ok'}" title="서비스 점검 ${d===6?'지연 확인':'확인 완료'}"></i>`;
+    else if(d===TODAY)m=`<i class="ok" title="상태 점검 확인 완료"></i><i class="${svcConfirmed()?'ok':'no'}" title="서비스 점검 ${svcConfirmed()?'확인 완료':'미확인'}"></i>`;
+    h+=`<div class="dd ${d>TODAY?'fut':''} ${d===TODAY?'today':''}"><span class="n">${d}${d===TODAY?' · 오늘':''}</span><span class="m">${m}</span></div>`;
+  }
+  $('#dc-cal').innerHTML=h;
+  $('#dc-cal-note').textContent=`칸마다 왼쪽은 상태 점검, 오른쪽은 서비스 점검입니다. 3월 이행 15일 중 당일 확인 ${svcConfirmed()?14:13}일 · 3/6(토)은 휴일 당번 지연으로 당일을 넘겨 확인했습니다.`;
+  const st=[['05:00','서버 3대 자원·프로세스 일 집계','<span class="pill p-ok">완료</span>'],['05:30','시스템 상태 점검 운영자 확인','<span class="pill p-ok">완료</span>'],['09:00','점검 대상 4종 접속·캡처·화면 판정','<span class="pill p-ok">완료</span>'],['09:05','정상이 아닌 항목 검토 대기함 등록','<span class="pill p-acc">3건 등록</span>'],['18:00','운영자 확인 마감, 미확인 시 알림',svcConfirmed()?'<span class="pill p-ok">완료</span>':'<span class="pill p-warn">진행 중</span>'],['04/01','유효성 월간 점검, 결과서 자동 등록','<span class="pill p-mute">예정</span>']];
+  $('#dc-steps').innerHTML=st.map(s=>`<li><span class="tm">${s[0]}</span><span>${s[1]}</span>${s[2]}</li>`).join('');
+};
+
+/* ================= 2.1.1 system ================= */
+render.sys=()=>{
+  const g=(l,v,th)=>`<div class="r"><span>${l}</span><div class="gauge"><i class="${v>=th?'w':''}" style="width:${v}%"></i><b style="left:${th}%"></b></div><span class="num" style="text-align:right">${v}%</span></div>`;
+  $('#srv').innerHTML=SV.map(s=>`<div class="panel srv"><header><h2>${s.n}</h2><span class="sub">${s.r}</span><span class="act"><span class="pill p-ok mk">정상</span></span></header>
+    <div class="rows">${g('CPU',s.cpu,80)}${g('메모리',s.mem,85)}${s.disks.map(d=>g('디스크 '+d[0],d[1],85)).join('')}</div>
+    <dl class="kv2"><dt>프로세스</dt><dd>${s.proc}</dd><dt>가동시간</dt><dd>${s.up}</dd><dt>NTP 시간차</dt><dd class="mono">${s.ntp}ms</dd><dt>오늘 집계</dt><dd>CPU 최대 ${s.mx}% · 평균 ${s.av}%</dd></dl>
+    <div class="cpu7"><div class="l">CPU 7일 추이 (점선은 경고 기준 80%)</div><div class="c"><span class="th" style="bottom:80%"></span>${s.h.map((v,i)=>`<i class="${i===6?'last':''}" style="height:${v}%" title="${['03-09','03-10','03-11','03-12','03-13','03-14','03-15'][i]} ${v}%"></i>`).join('')}</div></div>
+    <footer><span class="pill p-mute">${s.src}</span><span>마지막 수신 09:00</span></footer></div>`).join('');
+};
+
+/* ================= 2.1.2 service ================= */
+function svcState(t){const r=RQ.items[t.id];if(t.id==='T1')return'<span class="pill p-ok">정상</span>';
+  const base=t.res==='지연'?'<span class="pill p-warn">지연</span>':t.res==='오류 화면'?'<span class="pill p-crit">오류 화면</span>':'<span class="pill p-warn">점검 안내</span>';
+  return base+(r?`<div class="cap">확인 ${r.tm} · ${esc(RQ_OPTS[t.id][r.dec].split(' (')[0])}</div>`:'<div class="cap">검토 대기</div>')}
+render.svc=()=>{
+  const k=[['점검 대상','4건','대외 2 · 로그인 1 · 내부 관리자 1'],['정상','1건','하나포털 메인 1.12초'],['지연 · 이상','3건','지연 1 · 오류 1 · 점검 안내 1'],['운영자 확인',svcConfirmed()?'완료':`${3-rqLeft()}/3건`,svcConfirmed()?'확인 '+svcConfirmTm+' · 일지 반영':'18:00 마감 · 검토 대기함']];
+  $('#svc-kpi').innerHTML=k.map(x=>`<div class="panel kpi"><div class="l">${x[0]}</div><div class="v">${x[1]}</div><div class="s">${x[2]}</div></div>`).join('');
+  $('#svc-body').innerHTML=TG.map(t=>`<tr><td style="min-width:170px"><b>${t.n}</b><div style="font-size:12px;color:var(--muted)">${t.ty}</div><div style="font-size:11.5px;color:var(--muted)">${t.how}</div></td>
+    <td><button class="thumb" data-zoom="${t.id}" aria-label="${t.n} 캡처 크게 보기">${shot(t.kind,t.url,t.res==='지연'?t.t[2].toFixed(2)+'s':'')}</button></td>
+    <td><span class="mono" style="font-weight:600;color:${t.code>=400?'var(--crit)':'var(--ink)'}">${t.code}</span><div class="cap">SSL ${t.ssl}</div></td>
+    <td class="tm3"><span>응답 시작</span> ${t.t[0].toFixed(2)}초<br><span>화면 구성</span> ${t.t[1].toFixed(2)}초<br><span>로딩 완료</span> <b style="color:${t.t[2]>5?'var(--warn)':'inherit'}">${t.t[2].toFixed(2)}초</b></td>
+    <td>${svcState(t)}</td>
+    <td style="min-width:220px;font-size:13px">${t.meas?`<div class="why" style="margin:0 0 4px">측정: ${t.meas}</div>`:''}<b>AI 판정: ${t.ai}</b><div class="why">${esc(t.why)}</div></td></tr>`).join('');
+};
+$('#svc-run').onclick=()=>{const b=$('#svc-run');b.disabled=true;let i=0;
+  $('#svc-prog').innerHTML='<div class="pb" style="border-bottom:1px solid var(--line)"><div style="font-size:12.5px" id="svc-pt"></div><div class="prog"><i id="svc-pg"></i></div></div>';
+  const iv=setInterval(()=>{if(i<TG.length){$('#svc-pt').textContent=`${TG[i].n} 접속 · 캡처 · 로컬 AI 판정 중 (${i+1}/4)`;$('#svc-pg').style.width=((i+1)/TG.length*100)+'%';i++}else{clearInterval(iv);b.disabled=false;$('#svc-prog').innerHTML='';$('#svc-at').textContent=`2027-03-15 ${now()} 수동 재점검 · 결과 동일, 일지에 재점검 이력 기록`;toast('재점검 완료 · 결과를 일지에 기록했습니다');addFeed('Ops','서비스 점검 수동 재점검 4건 완료')}},650)};
+
+/* ================= 2.1.3 validity ================= */
+render.val=()=>{
+  const ks=['all','만료','30일 이내','90일 이내','정상','해당없음'];
+  $('#val-chips').innerHTML=ks.map(k=>`<button aria-pressed="${VS.f===k}" data-vf="${k}">${k==='all'?'전체':k} <b>${k==='all'?VAL.length:VAL.filter(v=>vSt(v)===k).length}</b></button>`).join('');
+  $$('[data-vf]').forEach(b=>b.onclick=()=>{VS.f=b.dataset.vf;render.val()});
+  const pc={'만료':'p-crit','30일 이내':'p-crit','90일 이내':'p-warn','정상':'p-ok','해당없음':'p-mute'};
+  const rows=VAL.filter(v=>VS.f==='all'||vSt(v)===VS.f);
+  $('#val-body').innerHTML=rows.map(v=>`<tr><td>${v.g}</td><td><b>${v.n}</b><div style="font-size:12px;color:var(--muted)">${v.s}</div></td><td class="mono">${v.exp||'없음'}</td><td class="mono" style="font-weight:600;color:${v.d!==null&&v.d<=30?'var(--crit)':'inherit'}">${v.d===null?'-':'D-'+v.d}</td><td><span class="pill ${pc[vSt(v)]}">${vSt(v)}</span></td><td style="color:var(--muted)">${v.how}</td><td style="font-size:12.5px">${v.hist.length?v.hist.map(esc).join('<br>'):'<span style="color:var(--muted)">없음</span>'}</td></tr>`).join('')||'<tr><td colspan="7" class="empty">해당 상태의 항목이 없습니다.</td></tr>';
+  $('#val-qs').innerHTML=VQ.map((q,i)=>`<button aria-pressed="${VS.q===i}" data-vq="${i}">${q[0]}</button>`).join('');
+  $$('[data-vq]').forEach(b=>b.onclick=()=>{VS.q=+b.dataset.vq;render.val()});
+  if(VS.q!==null)$('#val-qa').innerHTML=`<div class="q1">${VQ[VS.q][0]}</div><div class="a1">${VQ[VS.q][1]}</div><div style="font-size:12px;color:var(--muted)">질의와 답변은 감사 로그에 남깁니다 · 근거를 찾지 못한 질문에는 답변을 보류합니다.</div>`;
+};
+$('#val-rep').onclick=()=>{const c=k=>VAL.filter(v=>vSt(v)===k);
+  $('#val-out').innerHTML=`<div class="report"><h4>2027년 3월 유효성 점검 결과서 (고시 2.1.3)</h4>점검일 2027-03-02 · 기준일 2027-03-15 · 대상 ${VAL.length}건
+· 만료 0건 · 30일 이내 ${c('30일 이내').length}건 · 90일 이내 ${c('90일 이내').length}건 · 정상 ${c('정상').length}건 · 해당없음 ${c('해당없음').length}건
+
+[사전조치 필요]
+${c('30일 이내').map(v=>'· '+v.g+' '+v.n+' — '+v.exp+' (D-'+v.d+') : '+v.hist[0]).join('\n')}
+
+[NTP 동기화]
+· WEB·WAS·DB 3대 최대 시간차 21ms (기준 1초 이내) : 정상
+
+결재: 운영자 → PM · 결재 후 IRM 등록 증적으로 보관</div>`;toast('3월 유효성 점검 결과서를 만들었습니다');addFeed('Flow','3월 유효성 점검 결과서 생성')};
+
+/* ================= journal ================= */
+let jTab='sys';
+$$('#jrn-tabs .tab').forEach(t=>t.onclick=()=>{jTab=t.dataset.j;$$('#jrn-tabs .tab').forEach(x=>x.setAttribute('aria-selected',x===t));render.jrn()});
+render.jrn=()=>{
+  if(jTab==='sys'){
+    $('#jrn-box').innerHTML=`<header><h2>일일 시스템 상태 점검 일지</h2><span class="sub">종합관리시스템(샘플) · 점검일 2027-03-15 · 자동 작성 05:00 · [별표 2] 2.1.1</span><div class="act"><div class="sign"><div><span>운영자</span><b>확인<small>admin 05:30</small></b></div><div><span>PM</span><b style="color:var(--muted)">월간 일괄</b></div></div></div></header>
+     <div class="tw"><table><thead><tr><th>대상</th><th>항목</th><th>방법</th><th>결과</th><th>확인자(시각)</th></tr></thead><tbody>${SV.map(s=>`<tr><td><b>${s.n}</b> (${s.r})</td><td>CPU, 메모리, 디스크, 프로세스, NTP</td><td>수집 모듈 5분 주기</td><td><span class="pill p-ok">정상</span><div class="cap">CPU 최대 ${s.mx}%·평균 ${s.av}%, 메모리 ${s.mem}%, 디스크 최대 ${Math.max(...s.disks.map(d=>d[1]))}%</div></td><td class="mono">admin (05:30)</td></tr>`).join('')}</tbody></table></div>
+     <div class="pb"><div class="alert ok"><b>확인 완료</b><span>admin이 05:30에 확인했습니다. 확인 이력이 저장되어 월간 결과서와 IRM 등록용 요약에 반영됩니다.</span></div></div>`;
+  }else{
+    const ok=svcConfirmed();
+    $('#jrn-box').innerHTML=`<header><h2>일일 서비스 점검 일지</h2><span class="sub">종합관리시스템(샘플) · 점검일 2027-03-15 · 자동 작성 09:05 · [별표 2] 2.1.2</span><div class="act"><div class="sign"><div><span>운영자</span><b>${ok&&svcConfirmTm?'확인<small>admin '+svcConfirmTm+'</small>':'<span style="color:var(--warn)">미확인</span>'}</b></div><div><span>PM</span><b style="color:var(--muted)">월간 일괄</b></div></div></div></header>
+     <div class="tw"><table><thead><tr><th>대상</th><th>항목</th><th>방법</th><th>결과</th><th>확인 · 조치</th></tr></thead><tbody>${TG.map(t=>{const r=RQ.items[t.id];return `<tr><td><b>${t.n}</b><div class="cap">${t.ty}</div></td><td>접속 여부, 상태코드, 접속시간, 화면 판정</td><td>${t.how}</td><td>${svcState(t).split('<div')[0]}<div class="cap">${t.code} · ${t.t[2].toFixed(2)}초</div></td><td style="font-size:12.5px">${t.id==='T1'?'<span style="color:var(--muted)">정상 · 확인 대상 아님</span>':r?`${esc(RQ_OPTS[t.id][r.dec])}<div class="cap">${esc(r.memo)}${r.act?' · '+esc(r.act):''}</div>`:'<span class="pill p-warn">검토 대기</span>'}</td></tr>`}).join('')}</tbody></table></div>
+     <div class="pb">${ok?(svcConfirmTm?`<div class="alert ok"><b>확인 완료</b><span>admin이 ${svcConfirmTm}에 확인했습니다. 오판 정정 이력은 월간 오판 검토표에 모입니다.</span></div>`:`<div class="alert" style="align-items:center"><span>검토 대기함 3건이 모두 확인되었습니다. 일지를 최종 확인하세요.</span><button class="btn pri sm" style="margin-left:auto" id="jrn-ok">운영자 확인</button></div>`):`<div class="alert" style="align-items:center"><span>검토 대기 ${rqLeft()}건이 남아 있어 운영자 확인을 할 수 없습니다.</span><button class="btn sm" style="margin-left:auto" data-go="rvq">검토 대기함 열기</button></div>`}</div>`;
+    const b=$('#jrn-ok');if(b)b.onclick=()=>{svcConfirmTm=now();toast('서비스 점검 일지를 확인했습니다');addFeed('Ops','서비스 점검 일지 운영자 확인');rqBadge();render.jrn()};
+  }
+};
+
+/* ================= review queue ================= */
+render.rvq=()=>{
+  const ids=Object.keys(RQ.items);const left=rqLeft();
+  $('#rq-sum').textContent=`3건 중 ${left}건 남음`;
+  $('#rq-list').innerHTML=ids.map(id=>{const t=TG.find(x=>x.id===id),r=RQ.items[id];return `<li class="${RQ.sel===id?'sel':''} ${r?'done':''}" data-rq="${id}"><span class="tt">${t.n} ${r?'<span class="pill p-ok">확인</span>':''}</span><span class="mt">${t.res} · ${t.ty}</span></li>`}).join('');
+  $$('[data-rq]').forEach(l=>l.onclick=()=>{RQ.sel=l.dataset.rq;render.rvq()});
+  const t=TG.find(x=>x.id===RQ.sel),r=RQ.items[RQ.sel],df=RQ_DEF[RQ.sel];
+  $('#rq-title').textContent=t.n+' · '+t.res;$('#rq-sub').textContent='2027-03-15 09:00 점검 · '+t.how;
+  $('#rq-d').innerHTML=`<div class="cmp"><figure><div class="shot-md">${shot(t.kind,t.url,t.res==='지연'?t.t[2].toFixed(2)+'s':'')}</div><figcaption>오늘 09:00 캡처</figcaption></figure><figure><div class="shot-md">${shot(t.prev,t.url)}</div><figcaption>비교 · 최근 정상 화면 (03-14 09:00)</figcaption></figure></div>
+   <div class="met"><div>접속<b>성공</b></div><div>상태코드<b style="color:${t.code>=400?'var(--crit)':'inherit'}">${t.code}</b></div><div>응답 시작<b>${t.t[0].toFixed(2)}초</b></div><div>화면 구성<b>${t.t[1].toFixed(2)}초</b></div><div>로딩 완료<b style="color:${t.t[2]>5?'var(--warn)':'inherit'}">${t.t[2].toFixed(2)}초</b></div></div>
+   ${t.meas?`<div style="font-size:13px;margin-bottom:6px"><b>측정</b> · ${t.meas}</div>`:''}
+   <div style="font-size:13px"><b>로컬 AI 판정 근거</b> <span class="pill p-acc">AI 화면 판정: ${t.ai}</span><div class="why">${esc(t.why)}</div></div>
+   <div style="margin-top:14px;font-size:13px;font-weight:600">판정</div>
+   <div class="opts">${RQ_OPTS[t.id].map((o,i)=>`<label><input type="radio" name="rqd" value="${i}" ${(r?r.dec:df[0])===i?'checked':''} ${r?'disabled':''}>${o}</label>`).join('')}</div>
+   <div class="fm"><label>원인 메모 (200자 이내)<input type="text" id="rq-memo" maxlength="200" value="${esc(r?r.memo:df[1])}" ${r?'disabled':''}></label><label>조치 내용<input type="text" id="rq-act" value="${esc(r?r.act:df[2])}" ${r?'disabled':''}></label></div>
+   <div style="margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">${r?`<span class="pill p-ok">확인 완료 · admin ${r.tm}</span><span class="sub" style="font-size:12px;color:var(--muted)">일지에 반영되었습니다</span>`:`<button class="btn pri" id="rq-ok">확인하고 일지에 반영</button>`}</div>`;
+  const b=$('#rq-ok');if(b)b.onclick=()=>{const dec=+($('input[name=rqd]:checked')||{value:0}).value;
+    RQ.items[t.id]={dec,memo:$('#rq-memo').value.trim(),act:$('#rq-act').value.trim(),tm:now()};
+    addFeed('Ops',`검토 대기함 ${t.n} 확인 · ${RQ_OPTS[t.id][dec].split(' (')[0]}`);
+    if(dec===2&&t.id==='T3')addFeed('Sentinel','하나넷 관리자 오류 장애 등록 INC-0315-01');
+    const nx=Object.keys(RQ.items).find(k=>!RQ.items[k]);
+    if(nx){RQ.sel=nx;toast(t.n+' 확인 완료 · 다음 항목으로 이동')}else{svcConfirmTm=now();toast('검토 3건 완료 · 오늘 서비스 점검 확인이 일지에 기록되었습니다');addFeed('Ops','오늘 서비스 점검 운영자 확인 완료 (고시 2.1.2)')}
+    rqBadge();render.rvq()};
+};
+
+/* ================= OPS: SLA ================= */
+$('#sla-m').onchange=()=>render['ops-sla']();
+render['ops-sla']=()=>{
+  const m=+$('#sla-m').value,rows=slaRows(m),base=m<2;
+  $('#sla-sub').textContent=base?'기준선 측정 기간 · 판정하지 않음':'1~2월 기준선 측정 후 협의 확정값(샘플)으로 판정';
+  const kp=[['응용 S/W 가동률',rows[0][5],'목표 99.5% 이상 · QUR-01'],['8시간 내 장애 보수율',rows[1][5],'장애 착수 후 8시간 · MPR-02'],['SR 적기 처리율',rows[5][5],'최근 3개월 누적 · 목표 95%'],['고시 AP 필수 이행',base?'9/9':(svcConfirmed()?'9/9':'8/9'),svcConfirmed()||base?'일상점검 포함 전 항목 이행':'오늘 서비스 점검 확인 대기']];
+  $('#sla-kpi').innerHTML=kp.map(x=>`<div class="panel kpi"><div class="l">${x[0]}</div><div class="v">${x[1]}</div><div class="s">${x[2]}</div></div>`).join('');
+  $('#sla-body').innerHTML=rows.map(r=>`<tr><td>${r[0]?`<span class="pill p-acc">${r[0]}</span>`:''}</td><td><b style="font-weight:600">${r[1]}</b></td><td style="color:var(--muted)">${r[2]}</td><td style="font-size:12px;white-space:nowrap">${r[3]}</td><td>${base&&r[6]!=='ref'?'<span style="color:var(--muted)">기준선 측정</span>':r[4]}</td><td class="num"><b>${r[5]}</b></td><td>${JP[r[6]]}${r[6]==='wip'?' <button class="lnk" data-go="rvq">검토 대기함</button>':''}</td></tr>`).join('');
+  const miss=rows.filter(r=>r[6]==='no');
+  $('#sla-alert').innerHTML=base?`<div class="alert"><b>기준선 측정</b><span>1~2월 측정값을 바탕으로 퍼센트 목표치를 발주기관과 협의해 확정합니다.</span></div>`:miss.length?`<div class="alert crit"><b>미달 지표 ${miss.length}건</b><span>${miss.map(r=>r[1]).join(', ')} — 원인 분석과 개선 계획을 월간보고에 함께 제출합니다.</span></div>`:`<div class="alert ok"><b>미달 지표 없음</b><span>3월 1~15일 측정 기준 목표 미달 지표가 없습니다${svcConfirmed()?'':' · 고시 이행 1건은 오늘 18:00 확인 마감'}.</span></div>`;
+  const L=[
+   ['2.1.1','시스템 상태 점검','일 1회','15/15일 이행',1,'일일 상태 점검 일지','sys'],
+   ['2.1.2','서비스 점검 (운영자 확인 포함)','일 1회',svcConfirmed()?'15/15일 이행':'14/15일 · 오늘 확인 대기',svcConfirmed()?1:2,'점검 일지·운영자 확인 이력','svc'],
+   ['2.1.3','유효성 점검·만료 전 사전조치','월 1회','3/2 월간 점검 완료 · 사전조치 3건',1,'월간 결과서·사전조치 이력','val'],
+   ['1.3.1','백업정책 관리','반기 1회','6월 현행화 예정',0,'백업정책서·현행화 이력'],
+   ['1.4.1','SW 업데이트·패치','적용 시','패치 1건 영향도 검증 후 적용',1,'패치 계획서·결과보고서'],
+   ['1.6.1 · 3.2.2','운영매뉴얼 · 장애대응반','변경 시','비상연락망 관리원과 공동 현행화 (3/2)',1,'운영매뉴얼·비상연락망'],
+   ['5.4.1 · 5.4.2','재해복구 · 백업 복구 훈련','연 1회','하반기 훈련 예정',0,'훈련 결과서'],
+  ];
+  const lp=['<span class="pill p-mute">이번 달 대상 아님</span>','<span class="pill p-ok">이행</span>','<span class="pill p-warn">진행 중</span>'];
+  $('#law-body').innerHTML=L.map(l=>`<tr><td class="ref">[별표 2] ${l[0]}</td><td>${l[1]}</td><td>${l[2]}</td><td>${l[3]}${l[6]?` <button class="lnk" data-go="${l[6]}">열기</button>`:''}</td><td>${lp[l[4]]}</td><td style="color:var(--muted)">${l[5]}</td></tr>`).join('');
+};
+
+/* ================= OPS: SR ================= */
+let srF='all';
+$$('#sr-f button').forEach(b=>b.onclick=()=>{srF=b.dataset.f;$$('#sr-f button').forEach(x=>x.setAttribute('aria-pressed',x===b));render['ops-sr']()});
+render['ops-sr']=()=>{
+  const k=[['이번 달 접수',S.sr.length+'건','3월 1~15일'],['처리 중',S.sr.filter(x=>x.st!=='완료').length+'건','접수 '+S.sr.filter(x=>x.st==='접수').length+' · 처리중 '+S.sr.filter(x=>x.st==='처리중').length],['평균 처리기간',srAvg().toFixed(1)+'일','완료 '+srDone().length+'건 기준'],['적기 처리율',srOnTime()+'%','최근 3개월 누적 · SLA 반영']];
+  $('#sr-kpi').innerHTML=k.map(x=>`<div class="panel kpi"><div class="l">${x[0]}</div><div class="v">${x[1]}</div><div class="s">${x[2]}</div></div>`).join('');
+  const rows=S.sr.filter(x=>srF==='all'||x.st===srF);
+  const pc={접수:'p-mute',처리중:'p-warn',완료:'p-ok'};
+  $('#sr-body').innerHTML=rows.map(x=>{const over=x.st!=='완료'&&x.days>x.lim;return `<tr><td class="mono">${x.id}</td><td style="min-width:220px">${esc(x.t)}</td><td><span class="pill p-mute">${x.ty}</span></td><td>${x.dep}</td><td class="mono">${x.d}</td><td>${x.lim}일${x.st==='완료'?(x.days<=x.lim?' <span class="pill p-ok">기한 내</span>':' <span class="pill p-crit">초과</span>'):over?' <span class="pill p-crit">초과</span>':''}</td><td><span class="pill ${pc[x.st]}">${x.st}</span></td><td class="num">${x.st==='접수'?'-':x.days+'일'}</td><td>${x.st!=='완료'?`<button class="btn sm" data-adv="${x.id}">${x.st==='접수'?'처리 시작':'완료 처리'}</button>`:''}</td></tr>`}).join('')||`<tr><td colspan="9" class="empty">해당 상태의 요청이 없습니다.</td></tr>`;
+  $('#sr-avg').textContent='완료 '+srDone().length+'건 · 평균 처리 '+srAvg().toFixed(1)+'일';
+  $$('[data-adv]').forEach(b=>b.onclick=()=>{const x=S.sr.find(s=>s.id===b.dataset.adv);if(x.st==='접수'){x.st='처리중';x.days=1;toast(x.id+' 처리를 시작했습니다')}else{x.st='완료';x.days=Math.max(1,x.days);toast(x.id+' 완료 처리 · SLA 적기 처리율에 반영');addFeed('Ops',x.id+' 완료 처리')}render['ops-sr']()});
+};
+
+/* ================= OPS: 정기점검 ================= */
+const STG5=[['계획서 작성','대상 목록화 · 항목 사전 공지','02-24'],['계획 승인','월별 유지보수 계획서 제출','03-03'],['방문점검','둘째~셋째 주 방문 · 3/9~3/19',''],['결과 보고','체크리스트 · 결과보고서 제출','03-22 예정'],['승인·사후관리','지적사항 조치 · 재점검','']];
+render['ops-chk']=()=>{
+  const done=S.checks.filter(c=>c[2]).length,all=done===S.checks.length;const cur=all?3:2;
+  $('#chk-stage').innerHTML=STG5.map((s,i)=>`<div class="${i<cur?'done':i===cur?'cur':''}"><b>${i+1}. ${s[0]}</b><span>${s[1]}</span>${s[2]?`<small class="cap mono">${s[2]}</small>`:''}</div>`).join('');
+  $('#chk-p').textContent=done+' / '+S.checks.length+' 항목 완료 · 방문 3/9~3/19';
+  $('#chk-bar').style.width=(done/S.checks.length*100)+'%';
+  let g='',h='';S.checks.forEach((c,i)=>{if(c[0]!==g){g=c[0];h+=`<div class="grp">${g}</div>`}h+=`<label class="check ${c[2]?'done':''}"><input type="checkbox" ${c[2]?'checked':''} data-ck="${i}"><span>${c[1]}</span></label>`});
+  $('#chk-list').innerHTML=h;
+  $$('[data-ck]').forEach(c=>c.onchange=()=>{S.checks[c.dataset.ck][2]=c.checked;render['ops-chk']()});
+};
+$('#chk-gen').onclick=()=>{const done=S.checks.filter(c=>c[2]),left=S.checks.filter(c=>!c[2]);
+  $('#chk-out').innerHTML=`<div class="report"><h4>2027년 3월 정기점검 결과보고서 (초안)</h4>방문 기간 3/9~3/19 · 점검 항목 ${S.checks.length}건 중 ${done.length}건 완료 (${Math.round(done.length/S.checks.length*100)}%)
+
+[완료]
+${done.map(c=>'· '+c[0]+' — '+c[1]+' : 이상 없음').join('\n')||'· 없음'}
+
+[미완료 · 후속 조치]
+${left.map(c=>'· '+c[0]+' — '+c[1]+' : 3/19까지 완료 예정').join('\n')||'· 없음'}
+
+[참고] 일상점검 연동: 상태 점검 15/15일, 서비스 점검 이상 3건 확인·조치
+작성: 운영 PM · 검토: 품질관리 담당 · 제출 후 지적사항 재점검</div>`;toast('정기점검 결과보고서 초안을 만들었습니다');addFeed('Ops','3월 정기점검 결과보고서 초안 생성')};
+
+/* ================= OPS: 월간 보고서 ================= */
+$('#rep-gen').onclick=()=>{const r=slaRows(2),miss=r.filter(x=>x[6]==='no');const st=Object.entries(S.stats).sort((a,b)=>b[1]-a[1]);
+  $('#rep-out').innerHTML=`<div class="report"><h4>북한이탈주민 종합관리시스템 유지관리 월간보고 (2027년 3월, 초안)</h4>1. 서비스수준(SLA)
+  · 응용 S/W 가동률 ${r[0][5]} (목표 99.5% 이상), 연계 일일 점검 ${r[2][5]}, SR 적기 처리율 ${r[5][5]}
+  · 미달 지표: ${miss.length?miss.map(x=>x[1]).join(', ')+' → 원인 분석·개선 계획 별첨':'없음'}
+
+2. 안정성 고시 일상점검 (별표 2 · 2.1.1~2.1.3)
+  · 시스템 상태 점검 15/15일 · 서비스 점검 ${svcConfirmed()?'15/15일':'14/15일 (당일 확인 대기)'} · 유효성 점검 3/2 완료
+  · 서비스 점검 이상·지연 3건 확인 ${svcConfirmed()?'완료':'진행 중'} · 만료 전 사전조치 3건
+
+3. 서비스 요청(SR)
+  · 전체 ${S.sr.length}건 · 완료 ${srDone().length}건 · 처리 중 ${S.sr.filter(x=>x.st!=='완료').length}건 · 평균 처리 ${srAvg().toFixed(1)}일
+
+4. 장애
+  · 발생 ${S.incidents.length}건${S.incidents.length?' · '+S.incidents.map(i=>i.target+' '+i.min+'분 내 복구').join(', '):' (해당 없음)'}
+
+5. 정기점검
+  · 방문 3/9~3/19 · ${S.checks.filter(c=>c[2]).length}/${S.checks.length} 항목 완료
+
+6. 고객지원
+  · 상담 ${S.logs+S.calls.filter(c=>c.st!=='대기').length}건 · 주요 유형: ${st.slice(0,3).map(x=>x[0]+' '+x[1]+'건').join(', ')} · 콜백 대기 ${S.callbacks.length}건
+
+7. 웹 콘텐츠 운영
+  · 편성 ${ccStats().n}건 · 게시 완료 ${ccStats().pub}건 · 감수 대기 ${ccStats().rev}건 · 정시 발행률 ${ccStats().ontime}%
+
+※ 수치는 각 모듈 기록에서 자동 집계한 초안이며, PM 검토 후 확정합니다.</div>`;toast('월간 보고서 초안을 만들었습니다');addFeed('Ops','3월 월간 보고서 초안 생성')};
+
+/* ================= OPS: content calendar ================= */
+const CT={'정책 안내':'--t1','통계 콘텐츠':'--t2','영상':'--t3','메인 그래픽':'--t4','매뉴얼':'--t5','홍보물':'--t6'};
+const STG=['기획','제작','감수','게시','성과'];
+const QC=[['표기·저작권','교정·교열, 이미지·폰트·인용 출처와 라이선스 확인'],['웹 접근성','대체텍스트·명도 대비 등 한국형 웹 콘텐츠 접근성 지침'],['통계 정확성','데이터 출처·기준일 표기, 수치 이중 검증']];
+const OWN=['포털 담당 A','디자인 지원 B','UI 검토 C'];
+const CC={today:15,sel:6,on:Object.fromEntries(Object.keys(CT).map(k=>[k,true])),mode:'view',ev:[
+ {id:1,d:2,type:'통계 콘텐츠',t:'2월 정착지원 통계 게시',stage:4,owner:'포털 담당 A',checks:[1,1,1],late:0},
+ {id:2,d:2,type:'메인 그래픽',t:'정책 안내 배너 교체',stage:4,owner:'디자인 지원 B',checks:[1,1,1],late:0},
+ {id:3,d:3,type:'정책 안내',t:'3월 정착지원제도 안내 갱신',stage:4,owner:'포털 담당 A',checks:[1,1,1],late:0},
+ {id:4,d:8,type:'영상',t:'멘토/멘티 서비스 소개 영상',stage:4,owner:'디자인 지원 B',checks:[1,1,1],late:1},
+ {id:5,d:10,type:'매뉴얼',t:'하나포털 이용 가이드 v2027.03',stage:3,owner:'포털 담당 A',checks:[1,1,1],late:0},
+ {id:6,d:17,type:'메인 그래픽',t:'증명서 발급 안내 팝업',stage:2,owner:'디자인 지원 B',checks:[1,0,1],late:0},
+ {id:7,d:19,type:'홍보물',t:'하나센터 안내 카드뉴스',stage:2,owner:'디자인 지원 B',checks:[1,0,0],late:0},
+ {id:8,d:22,type:'홍보물',t:'취업지원 정책 카드뉴스',stage:1,owner:'디자인 지원 B',checks:[0,0,0],late:0},
+ {id:9,d:24,type:'매뉴얼',t:'하나넷 사용자 매뉴얼 점검',stage:1,owner:'포털 담당 A',checks:[0,0,0],late:0},
+ {id:10,d:26,type:'메인 그래픽',t:'4월 메인 배너 시안',stage:1,owner:'디자인 지원 B',checks:[0,0,0],late:0},
+ {id:11,d:29,type:'정책 안내',t:'4월 정책 안내 원고 마감',stage:0,owner:'포털 담당 A',checks:[0,0,0],late:0},
+ {id:12,d:31,type:'통계 콘텐츠',t:'3월 통계 데이터 추출',stage:0,owner:'포털 담당 A',checks:[0,0,0],late:0},
+]};
+const tc=t=>`--tc:var(${CT[t]})`;
+const md=d=>'03.'+String(d).padStart(2,'0');
+const rvd=d=>d-7>=1?md(d-7):'02.'+String(28+d-7).padStart(2,'0');
+function ccStats(){const e=CC.ev,pub=e.filter(x=>x.stage>=3),done=pub.length;const ontime=Math.round((58+done-pub.filter(x=>x.late).length)/(60+done)*1000)/10;return{n:e.length,pub:done,rev:e.filter(x=>x.stage===2).length,ontime}}
+function ccKpi(){const k=ccStats();
+  $('#cc-kpi').innerHTML=[['이번 달 편성',k.n+'건','콘텐츠 유형 6종'],['게시 완료',k.pub+'건','남은 편성 '+(k.n-k.pub)+'건'],['감수 대기',k.rev+'건','발행일 D-7 감수 요청'],['정시 발행률',k.ontime+'%','최근 12개월 · 목표 95% 이상']].map(x=>`<div class="panel kpi"><div class="l">${x[0]}</div><div class="v">${x[1]}</div><div class="s">${x[2]}</div></div>`).join('')}
+function ccCal(){
+  const first=new Date(2027,2,1).getDay(),days=31;
+  let h=['일','월','화','수','목','금','토'].map((w,i)=>`<div class="wd ${i===0?'sun':''}">${w}</div>`).join('');
+  for(let i=0;i<first;i++)h+=`<div class="day off"><div class="dn">${28-first+i+1}</div></div>`;
+  for(let d=1;d<=days;d++){const evs=CC.ev.filter(e=>e.d===d&&CC.on[e.type]);
+    h+=`<div class="day ${d===CC.today?'today':''}"><div class="dn">${d}</div>${evs.map(e=>`<button class="ev" data-ev="${e.id}" aria-current="${e.id===CC.sel&&CC.mode==='view'}" style="${tc(e.type)}" title="${esc(e.t)}"><span class="st">${STG[e.stage]}</span>${esc(e.t)}</button>`).join('')}</div>`}
+  const tail=(7-(first+days)%7)%7;for(let i=1;i<=tail;i++)h+=`<div class="day off"><div class="dn">${i}</div></div>`;
+  $('#cc-cal').innerHTML=h;
+  $$('#cc-cal .ev').forEach(b=>b.onclick=()=>{CC.sel=+b.dataset.ev;CC.mode='view';ccAll()});
+}
+function ccUp(){
+  const ups=CC.ev.filter(e=>e.d>=CC.today&&e.stage<3).sort((a,b)=>a.d-b.d);
+  $('#cc-up').innerHTML=ups.map(e=>{const dd=e.d-CC.today,rv=e.d-7-CC.today;const late=e.stage<2&&rv<0,tod=e.stage<2&&rv===0;
+    return `<li data-up="${e.id}"><span class="mono">${md(e.d)}</span><span><span class="tchip" style="${tc(e.type)}">${e.type}</span> ${esc(e.t)}${late?' <span class="pill p-crit">감수 요청 지남</span>':tod?' <span class="pill p-crit">오늘 감수 요청</span>':e.stage<2&&rv<=3?' <span class="pill p-warn">감수 요청 D-'+rv+'</span>':''}</span><span class="pill ${dd<=3?'p-warn':'p-mute'}">D-${dd}</span></li>`}).join('')||'<li style="cursor:default"><span></span><span style="color:var(--muted)">남은 일정이 없습니다.</span><span></span></li>';
+  $$('[data-up]').forEach(l=>l.onclick=()=>{CC.sel=+l.dataset.up;CC.mode='view';ccAll()});
+}
+function ccSide(){
+  if(CC.mode==='new'){
+    $('#cc-sh').textContent='편성 등록';
+    $('#cc-side').innerHTML=`<form class="fm" id="cc-form"><label>콘텐츠 유형<select id="f-type">${Object.keys(CT).map(t=>`<option>${t}</option>`).join('')}</select></label>
+      <label>제목<input type="text" id="f-title" value="4월 정착지원 교육 안내" required></label>
+      <div class="two"><label>발행일(3월)<select id="f-day">${Array.from({length:31},(_,i)=>i+1).filter(d=>d>CC.today).map(d=>`<option value="${d}" ${d===28?'selected':''}>${md(d)}</option>`).join('')}</select></label>
+      <label>담당<select id="f-own">${OWN.map(o=>`<option>${o}</option>`).join('')}</select></label></div>
+      <div class="report" id="f-calc" style="padding:10px 12px"></div>
+      <div style="display:flex;gap:8px"><button class="btn pri" type="submit">등록</button><button class="btn" type="button" id="f-cancel">취소</button></div></form>`;
+    const calc=()=>{const d=+$('#f-day').value;$('#f-calc').innerHTML=`감수 요청일 <b class="mono">${rvd(d)}</b> (발행일 D-7 자동 계산)<br>등록 시 담당자와 발주기관 감수자에게 알림이 발송됩니다.`};
+    $('#f-day').onchange=calc;calc();
+    $('#f-cancel').onclick=()=>{CC.mode='view';ccSide()};
+    $('#cc-form').onsubmit=e=>{e.preventDefault();const t=$('#f-title').value.trim();if(!t){$('#f-title').focus();return}
+      const id=Math.max(...CC.ev.map(x=>x.id))+1;CC.ev.push({id,d:+$('#f-day').value,type:$('#f-type').value,t,stage:0,owner:$('#f-own').value,checks:[0,0,0],late:0});
+      CC.sel=id;CC.mode='view';CC.on[$('#f-type').value]=true;toast('편성표에 등록했습니다 · 감수 요청일 '+rvd(+$('#f-day').value));addFeed('Ops','편성 등록: '+t);ccFlt();ccAll()};
+    return;
+  }
+  const e=CC.ev.find(x=>x.id===CC.sel);$('#cc-sh').textContent='편성 상세';
+  const allOk=e.checks.every(Boolean);let act='';
+  if(e.stage===0)act=`<button class="btn pri" id="cc-act">제작 착수</button>`;
+  else if(e.stage===1)act=`<button class="btn pri" id="cc-act">감수 요청 (D-7)</button>`;
+  else if(e.stage===2)act=`<button class="btn pri" id="cc-act" ${allOk?'':'disabled'}>게시 승인</button>${allOk?'':'<p style="margin:8px 0 0;font-size:12px;color:var(--muted)">품질 점검 3개 항목을 모두 통과해야 게시할 수 있습니다.</p>'}`;
+  else if(e.stage===3)act=`<button class="btn" id="cc-act">성과 측정 시작</button>`;
+  else act=`<span class="pill p-ok">게시 완료 · 성과 측정 중</span>`;
+  $('#cc-side').innerHTML=`<span class="tchip" style="${tc(e.type)}">${e.type}</span><h3 style="margin:8px 0 10px;font-size:16px">${esc(e.t)}</h3>
+    <dl class="kv"><dt>발행일</dt><dd class="mono">2027.${md(e.d)}${e.late?' <span class="pill p-warn">지연 발행</span>':''}</dd><dt>감수 요청</dt><dd class="mono">${rvd(e.d)} (D-7)</dd><dt>담당</dt><dd>${e.owner} · 발주기관 감수</dd></dl>
+    <div class="flow">${STG.map((x,i)=>`<span class="${i<e.stage?'done':i===e.stage?'cur':''}">${x}</span>`).join('')}</div>
+    <b style="font-size:13px">품질 점검</b>
+    <ul class="chk">${QC.map((c,i)=>`<li><label><input type="checkbox" data-qc="${i}" ${e.checks[i]?'checked':''} ${e.stage>=3?'disabled':''}><span>${c[0]}<small>${c[1]}</small></span></label></li>`).join('')}</ul>${act}`;
+  $$('[data-qc]').forEach(c=>c.onchange=()=>{e.checks[c.dataset.qc]=c.checked?1:0;ccSide()});
+  const a=$('#cc-act');if(a)a.onclick=()=>{e.stage++;if(e.stage===3&&e.d<CC.today)e.late=1;toast(`'${e.t}' → ${STG[e.stage]} 단계`);addFeed('Ops',`편성 '${e.t}' ${STG[e.stage]} 단계`);ccAll()};
+}
+function ccFlt(){$('#cc-flt').innerHTML=Object.keys(CT).map(k=>`<button aria-pressed="${CC.on[k]}" data-ft="${k}" style="${tc(k)}"><i></i>${k}</button>`).join('');
+  $$('[data-ft]').forEach(b=>b.onclick=()=>{CC.on[b.dataset.ft]=!CC.on[b.dataset.ft];b.setAttribute('aria-pressed',CC.on[b.dataset.ft]);ccCal()})}
+function ccAll(){ccKpi();ccCal();ccUp();ccSide()}
+$('#cc-new').onclick=()=>{CC.mode='new';ccCal();ccSide();$('#f-title')&&$('#f-title').focus()};
+ccFlt();
+render['ops-cal']=ccAll;
+render['ops-rep']=()=>{};
+
+/* ================= call ================= */
+let callF='all',callSel='C-2031';
+$$('#call-f button').forEach(b=>b.onclick=()=>{callF=b.dataset.f;$$('#call-f button').forEach(x=>x.setAttribute('aria-pressed',x===b));drawQ()});
+function drawQ(){
+  const sc={대기:'p-warn',완료:'p-ok',콜백:'p-acc'};
+  const rows=S.calls.filter(c=>callF==='all'||c.ch===callF);
+  $('#call-q').innerHTML=rows.map(c=>`<div class="q ${c.id===callSel?'sel':''}" data-q="${c.id}" tabindex="0"><span class="tt">${esc(c.t)}</span><span class="pill ${sc[c.st]}">${c.st}</span><span class="mt"><span class="mono">${c.tm}</span><span>${c.ch}</span><span>${c.who}</span><span class="pill p-mute">${c.type}</span>${c.urg==='높음'?'<span class="pill p-crit">긴급도 높음</span>':''}</span></div>`).join('')||'<div class="empty">해당 채널의 문의가 없습니다.</div>';
+  $$('[data-q]').forEach(q=>{q.onclick=()=>{callSel=q.dataset.q;drawQ();drawD()};q.onkeydown=e=>{if(e.key==='Enter')q.click()}});
+}
+function drawD(){
+  const c=S.calls.find(x=>x.id===callSel);if(!c){$('#call-d').innerHTML='<div class="empty">문의를 선택하세요.</div>';return}
+  $('#call-id').textContent=c.id+' · '+c.ch+' · '+c.tm;
+  $('#call-d').innerHTML=`<dl class="kv"><dt>문의 원문</dt><dd>${esc(c.raw)}</dd><dt>${c.ch==='전화'?'녹취 요약':'요약'}</dt><dd>${esc(c.sum)}</dd>
+   <dt>자동 분류</dt><dd><span class="pill p-acc">${c.type}</span> <span class="pill ${c.urg==='높음'?'p-crit':'p-mute'}">긴급도 ${c.urg}</span></dd></dl>
+   <div style="margin:14px 0 6px;display:flex;align-items:center;gap:8px"><b style="font-size:13px">추천 답변</b><span class="badge b-pilot">Flow 근거 기반</span></div>
+   <label for="ans" class="sub" style="font-size:12px;color:var(--muted)">상담원이 검토·수정한 뒤 등록합니다</label>
+   <textarea id="ans">${esc(c.ans)}</textarea>
+   <div>${c.src.map(s=>`<span class="src">근거 · ${esc(s[0])} — ${esc(s[1])}</span>`).join('')}</div>
+   <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn pri" id="c-save" ${c.st==='완료'?'disabled':''}>답변 등록 · 상담일지 저장</button><button class="btn" id="c-cb" ${c.st!=='대기'?'disabled':''}>콜백 예약</button></div>`;
+  $('#c-save').onclick=()=>{c.st='완료';S.stats[c.type]=(S.stats[c.type]||0)+1;S.logs++;toast('상담일지에 저장했습니다 · '+c.id);addFeed('Call',c.id+' 답변 등록·상담일지 저장');drawQ();drawD();drawCallSide()};
+  $('#c-cb').onclick=()=>{c.st='콜백';S.callbacks.push({id:'CB-'+(120+S.callbacks.length),who:c.who,t:c.t,due:'16:00'});toast('콜백을 16:00로 예약했습니다');drawQ();drawD();drawCallSide()};
+}
+function drawCallSide(){
+  $('#cb-n').textContent=S.callbacks.length+'건';
+  $('#cb-list').innerHTML=S.callbacks.length?`<div class="tw"><table><tbody>${S.callbacks.map(b=>`<tr><td class="mono">${b.id}</td><td>${esc(b.t)}<div style="font-size:12px;color:var(--muted)">${b.who}</div></td><td class="mono">기한 ${b.due}</td><td><button class="btn sm" data-cb="${b.id}">콜백 완료</button></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">대기 중인 콜백이 없습니다.</div>';
+  $$('[data-cb]').forEach(b=>b.onclick=()=>{S.callbacks=S.callbacks.filter(x=>x.id!==b.dataset.cb);S.logs++;toast(b.dataset.cb+' 콜백 완료');addFeed('Call',b.dataset.cb+' 콜백 완료');drawCallSide()});
+  const e=Object.entries(S.stats).sort((a,b)=>b[1]-a[1]),mx=Math.max(...e.map(x=>x[1]));
+  $('#log-n').textContent='상담일지 '+S.logs+'건';
+  $('#call-stat').innerHTML=e.map(([k,v])=>`<div class="r"><span>${k}</span><div class="bar"><i style="width:${v/mx*100}%"></i></div><span class="num" style="text-align:right">${v}</span></div>`).join('');
+}
+render.call=()=>{drawQ();drawD();drawCallSide()};
+
+/* ================= sentinel ================= */
+const TARGETS=[
+ {n:'WEB-01',ty:'웹 서버 · CPU',u:'%',base:31,j:8},{n:'WAS-01',ty:'WAS · 힙 사용',u:'%',base:54,j:6},
+ {n:'DB-01',ty:'DBMS · 세션',u:'개',base:118,j:14},{n:'DB-01 /dbdata',ty:'디스크 사용률',u:'%',base:78,j:1},
+ {n:'하나포털 메인',ty:'합성 측정 · 응답',u:'ms',base:820,j:160},{n:'민원발급 연계',ty:'합성 측정 · 응답',u:'ms',base:410,j:90},
+ {n:'연계 배치 · 행안부',ty:'일 배치 · 경과',u:'분',base:18,j:2},{n:'연계 배치 · 고용부',ty:'일 배치 · 경과',u:'분',base:12,j:2},
+];
+TARGETS.forEach(t=>{t.h=Array.from({length:16},()=>t.base+(Math.random()-.5)*t.j*2);t.st='ok'});
+const SN={active:null};
+function spark(h,st){const mn=Math.min(...h),mx=Math.max(...h),r=mx-mn||1;const pts=h.map((v,i)=>(i*84/(h.length-1)).toFixed(1)+','+(24-(v-mn)/r*22).toFixed(1)).join(' ');
+  return `<svg viewBox="0 0 84 26" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="var(--${st==='crit'?'crit':'accent'})" stroke-width="1.5"/></svg>`}
+function drawTiles(){
+  $('#sn-tiles').innerHTML=TARGETS.map(t=>{const v=t.h[t.h.length-1];return `<div class="tile ${t.st==='crit'?'crit':t.st==='warn'?'warn':''}"><div class="n">${t.n}</div><div class="ty">${t.ty}</div><div class="m"><b>${t.st==='crit'?'응답 없음':Math.round(v)+' '+t.u}</b>${spark(t.h,t.st)}</div></div>`}).join('');
+}
+function tick(){TARGETS.forEach(t=>{let v=t.st==='crit'?t.base*6:t.base+(Math.random()-.5)*t.j*2;t.h.push(v);t.h.shift()});if(!$('[data-v="sentinel"]').hidden)drawTiles()}
+setInterval(tick,3000);
+$('#sn-sim').onclick=()=>{
+  if(SN.active)return;
+  const t=TARGETS.find(x=>x.n==='민원발급 연계');t.st='crit';const start=new Date();
+  SN.active={target:'민원발급 연계',start};$('#sn-sim').disabled=true;$('#sn-fix').disabled=false;drawTiles();
+  const fmt=d=>d.toTimeString().slice(0,8);
+  const plan=[[0,'c','장애 감지 — 민원발급 연계 합성 측정 3회 연속 응답 없음 (등급: 긴급)'],[1200,'','1차 당번(유지보수 개발자) 문자·메신저 전파'],[2600,'','5분 내 미확인 시 2차 당번 전파 예약'],[3800,'','발주기관 담당자에게 장애 발생 1차 보고 (긴급 등급 즉시 보고)']];
+  $('#sn-tl').innerHTML='<ul class="tl" id="tl"></ul>';
+  plan.forEach(([ms,c,txt])=>setTimeout(()=>{if(!SN.active)return;const d=new Date(start.getTime()+ms*60);$('#tl').insertAdjacentHTML('beforeend',`<li class="${c}"><span class="tm">${fmt(d)}</span>${txt}</li>`)},ms));
+  $('#sn-ai').innerHTML=`<div class="alert crit" style="margin-bottom:12px"><b>민원발급 연계</b><span>응답 없음 · 영향: 하나포털 증명서 발급</span></div>
+   <div style="font-size:13px;display:grid;gap:10px"><div><b>유사 장애 이력 2건</b> <span class="badge b-pilot">Flow</span>
+   <div class="src" style="display:block;margin-top:6px">2026-11-08 · API 게이트웨이 커넥션 풀 고갈 → 풀 크기 조정·재기동, 38분 복구</div>
+   <div class="src" style="display:block">2026-06-21 · 인증서 만료로 TLS 핸드셰이크 실패 → 인증서 교체, 52분 복구</div></div>
+   <div><b>점검 순서 제안</b><ol style="margin:6px 0 0;padding-left:18px"><li>게이트웨이 커넥션 풀·스레드 상태 확인</li><li>API 서버 인증서 만료일 확인 (유효성 점검 관리대장)</li><li>DB-01 세션 수 급증 여부 확인</li></ol></div>
+   <div style="font-size:12px;color:var(--muted)">원인 판단과 조치는 담당자가 확인한 뒤 확정합니다.</div></div>`;
+  $('#sn-rep').innerHTML='<div class="empty">복구 처리 후 자동으로 작성됩니다.</div>';
+  addFeed('Sentinel','민원발급 연계 응답 없음 감지 · 1차 당번 전파');toast('장애를 감지해 1차 당번에게 전파했습니다');
+};
+$('#sn-fix').onclick=()=>{
+  const a=SN.active;if(!a)return;const t=TARGETS.find(x=>x.n==='민원발급 연계');t.st='ok';t.h=t.h.map(()=>t.base);
+  const min=Math.max(1,Math.round((Date.now()-a.start)/1000))+34;
+  const fmt=d=>d.toTimeString().slice(0,5);const end=new Date(a.start.getTime()+min*60000);
+  $('#tl').insertAdjacentHTML('beforeend',`<li class="g"><span class="tm">${end.toTimeString().slice(0,8)}</span>복구 확인 — 게이트웨이 커넥션 풀 조정 후 정상 응답</li>`);
+  S.incidents.push({target:'민원발급 연계',min});SN.active=null;$('#sn-sim').disabled=false;$('#sn-fix').disabled=true;drawTiles();
+  $('#sn-rep').innerHTML=`<dl class="kv"><dt>장애 대상</dt><dd>민원발급 연계 (긴급)</dd><dt>발생 · 인지</dt><dd class="mono">${fmt(a.start)} · ${fmt(a.start)} (자동 감지)</dd><dt>복구</dt><dd class="mono">${fmt(end)} · 소요 ${min}분</dd>
+   <dt>원인</dt><dd>API 게이트웨이 커넥션 풀 고갈 (담당자 확인)</dd><dt>조치</dt><dd>풀 크기 조정 및 게이트웨이 재기동</dd><dt>재발 방지</dt><dd>커넥션 풀 사용률 80% 임계치 경보 추가</dd><dt>SLA 반영</dt><dd>복구시간 ${min}분 · 8시간 목표 이내</dd></dl>
+   <div style="margin-top:12px;font-size:12px;color:var(--muted)">보고서는 Flow 지식으로 재등록되어 다음 장애 분석에 쓰입니다.</div>`;
+  addFeed('Sentinel','민원발급 연계 복구 · 소요 '+min+'분, 장애보고서 초안 작성');toast('복구 처리 완료 · 장애보고서 초안을 만들었습니다');
+};
+render.sentinel=()=>drawTiles();
+
+/* ================= etl ================= */
+let etlSel='보건복지부 · 수혜현황';
+function drawETL(){
+  const pc={정상:'p-ok',지연:'p-crit','스키마 변경':'p-warn',재수집중:'p-acc'};
+  $('#etl-body').innerHTML=S.etl.map(e=>`<tr class="click ${e.n===etlSel?'sel':''}" data-e="${e.n}"><td><b>${e.n}</b><div style="font-size:12px;color:var(--muted)">${e.k}</div></td><td>${e.data}</td><td>${e.cyc}</td><td class="mono">${e.last}</td><td class="num">${e.c.toLocaleString()}</td><td class="num" style="color:${e.dd<-20?'var(--crit)':'var(--muted)'}">${e.dd>0?'+':''}${e.dd.toFixed(1)}%</td><td><span class="pill ${pc[e.st]}">${e.st}</span></td></tr>`).join('');
+  $$('[data-e]').forEach(r=>r.onclick=()=>{etlSel=r.dataset.e;drawETL()});
+  const e=S.etl.find(x=>x.n===etlSel);$('#etl-dt').textContent=e.n+' · '+e.data;
+  const days=['03-09','03-10','03-11','03-12','03-13','03-14','03-15'];const mx=Math.max(...e.hist,1);
+  let extra='';
+  if(e.st==='지연')extra=`<div class="alert crit" style="margin:14px 0"><b>수신 지연</b><span>월 1회 예정 수신일을 넘겼습니다. 하나넷 수혜현황 통계와 통계 메뉴에 영향이 있습니다.</span></div>`;
+  else if(e.st==='스키마 변경')extra=`<div class="alert" style="margin:14px 0"><b>스키마 변경 감지</b><span>새 컬럼이 들어왔습니다. 표준 스키마 매핑을 확인한 뒤 재수집합니다.</span></div><div class="diff"><span>  PRSN_ID          VARCHAR(20)</span>
+<span>  ENTR_DT          DATE</span>
+<span>  KNDR_CD          VARCHAR(10)</span>
+<span class="add">+ SPRT_SE_CD       VARCHAR(4)    -- 신규: 지원 구분 코드</span>
+<span class="del">- INST_NM          VARCHAR(100)  -- 삭제: 기관명</span></div>`;
+  else extra=`<div class="alert ok" style="margin:14px 0"><b>정상 수신</b><span>최근 7일 건수 변동이 기준 범위(±20%) 안에 있습니다.</span></div>`;
+  $('#etl-d').innerHTML=`<div style="font-size:12.5px;color:var(--muted)">최근 7일 수신 건수 (천 건)</div>
+   <div class="spark">${e.hist.map((v,i)=>`<div class="${i===6?'last':''} ${v<mx*.5&&e.cyc.startsWith('일')?'low':''}" style="height:${Math.max(2,v/mx*100)}%" title="${days[i]} ${v}천 건"></div>`).join('')}</div>
+   <div class="spark-x">${days.map(d=>`<span>${d.slice(3)}</span>`).join('')}</div>${extra}
+   <div style="font-size:13px"><b>정제 결과 (최근 수신분)</b>
+   <table style="margin-top:6px"><tbody><tr><td>식별번호 형식 오류 격리</td><td class="num">${e.c?Math.round(e.c*0.0004):0}건</td></tr><tr><td>날짜·금액 형식 통일</td><td class="num">${e.c?Math.round(e.c*0.012):0}건</td></tr><tr><td>중복 레코드 제거</td><td class="num">${e.c?Math.round(e.c*0.002):0}건</td></tr><tr><td>기관·코드 명칭 표준화</td><td class="num">${e.c?Math.round(e.c*0.006):0}건</td></tr></tbody></table></div>
+   <div id="etl-prog"></div>`;
+  $('#etl-re').disabled=e.st==='정상'||e.st==='재수집중';
+}
+$('#etl-re').onclick=()=>{
+  const e=S.etl.find(x=>x.n===etlSel);e.st='재수집중';drawETL();
+  $('#etl-prog').innerHTML='<div style="font-size:12.5px;margin-top:12px">재수집 진행 중 · 증분 수집 → 정제 → 적재</div><div class="prog"><i id="pg"></i></div>';
+  let p=0;const iv=setInterval(()=>{p+=10;$('#pg')&&($('#pg').style.width=p+'%');if(p>=100){clearInterval(iv);
+    e.st='정상';e.last=now();if(!e.c){e.c=63412;e.hist[6]=63}e.dd=e.c&&e.hist[5]?+((e.hist[6]-e.hist[5])/e.hist[5]*100).toFixed(1):0;
+    addFeed('ETL',e.n+' 재수집 완료 · '+e.c.toLocaleString()+'건 적재');toast(e.n+' 재수집 완료');drawETL()}},180);
+};
+render.etl=()=>drawETL();
+
+/* ================= boot ================= */
+rqBadge();
+let start='home';try{const v=localStorage.getItem('bas2-view');if(v&&$(`[data-v="${v}"]`))start=v}catch(e){}
+if(location.hash&&$(`[data-v="${location.hash.slice(1)}"]`))start=location.hash.slice(1);
+show(start);
+</script>
+
+</body>
+</html>
